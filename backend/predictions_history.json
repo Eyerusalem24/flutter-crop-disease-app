@@ -1339,5 +1339,14 @@
     "disease": "Late Blight",
     "confidence": 97.42,
     "treatment": "Apply fungicides immediately. Destroy infected plants."
+  },
+  {
+    "id": 150,
+    "timestamp": "2026-05-22 18:52:17",
+    "crop": "maize",
+    "image": "maize_20260522_185214_image.jpg",
+    "disease": "Northern Leaf Blight",
+    "confidence": 91.91,
+    "treatment": "Apply fungicides. Practice crop rotation."
   }
 ]

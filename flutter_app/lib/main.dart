@@ -5,6 +5,7 @@ import 'pages/history_page.dart';
 import 'pages/analytics_page.dart';
 import 'pages/field_survey_page.dart';
 import 'pages/confusion_matrix_page.dart';
+import 'pages/disease_encyclopedia_page.dart';
 
 List<CameraDescription> cameras = [];
 
@@ -302,11 +303,36 @@ class HomePage extends StatelessWidget {
                                       onPressed: () {
                                         Navigator.push(
                                           context,
-                                          MaterialPageRoute(builder: (context) => ConfusionMatrixPage()),
+                                          MaterialPageRoute(builder: (context) => const ConfusionMatrixPage()),
                                         );
                                       },
                                       icon: const Icon(Icons.grid_on),
                                       label: const Text('Model Performance'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.green,
+                                        side: const BorderSide(color: Colors.green),
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(30),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  
+                                  const SizedBox(height: 10),
+
+                                  // Disease Encyclopedia Button
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => const DiseaseEncyclopediaPage()),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.book),
+                                      label: const Text('Disease Encyclopedia'),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: Colors.green,
                                         side: const BorderSide(color: Colors.green),
