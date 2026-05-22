@@ -1321,5 +1321,23 @@
     "disease": "Common Rust",
     "confidence": 97.81,
     "treatment": "Use resistant varieties. Apply fungicides if severe."
+  },
+  {
+    "id": 148,
+    "timestamp": "2026-05-22 18:20:54",
+    "crop": "maize",
+    "image": "maize_20260522_182052_image.jpg",
+    "disease": "Gray Leaf Spot",
+    "confidence": 76.57,
+    "treatment": "Apply fungicides. Remove infected leaves. Rotate crops for 2 years."
+  },
+  {
+    "id": 149,
+    "timestamp": "2026-05-22 18:21:29",
+    "crop": "potato",
+    "image": "potato_20260522_182127_image.jpg",
+    "disease": "Late Blight",
+    "confidence": 97.42,
+    "treatment": "Apply fungicides immediately. Destroy infected plants."
   }
 ]

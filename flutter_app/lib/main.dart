@@ -4,6 +4,7 @@ import 'pages/detection_page.dart';
 import 'pages/history_page.dart';
 import 'pages/analytics_page.dart';
 import 'pages/field_survey_page.dart';
+import 'pages/confusion_matrix_page.dart';
 
 List<CameraDescription> cameras = [];
 
@@ -242,7 +243,7 @@ class HomePage extends StatelessWidget {
                                   
                                   const SizedBox(height: 10),
                                   
-                                  // ✅ Analytics Dashboard Button 
+                                  // Analytics Dashboard Button 
                                   SizedBox(
                                     width: double.infinity,
                                     child: OutlinedButton.icon(
@@ -264,32 +265,58 @@ class HomePage extends StatelessWidget {
                                       ),
                                     ),
                                   ),
-                                   const SizedBox(height: 10),
+                                  
+                                  const SizedBox(height: 10),
 
-// Field Survey Button
-SizedBox(
-  width: double.infinity,
-  child: OutlinedButton.icon(
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => FieldSurveyPage(camera: cameras.first),
-        ),
-      );
-    },
-    icon: const Icon(Icons.agriculture),
-    label: const Text('Field Survey'),
-    style: OutlinedButton.styleFrom(
-      foregroundColor: Colors.green,
-      side: const BorderSide(color: Colors.green),
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(30),
-      ),
-    ),
-  ),
-),
+                                  // Field Survey Button
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => FieldSurveyPage(camera: cameras.first),
+                                          ),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.agriculture),
+                                      label: const Text('Field Survey'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.green,
+                                        side: const BorderSide(color: Colors.green),
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(30),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  
+                                  const SizedBox(height: 10),
+
+                                  // Confusion Matrix Button
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => ConfusionMatrixPage()),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.grid_on),
+                                      label: const Text('Model Performance'),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.green,
+                                        side: const BorderSide(color: Colors.green),
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(30),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                   
                                   const SizedBox(height: 15),
                                 ],
