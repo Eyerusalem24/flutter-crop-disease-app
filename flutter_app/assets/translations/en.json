@@ -1,0 +1,11 @@
+{
+  "app_title": "Crop Disease Detection",
+  "select_crop": "Select Crop",
+  "take_photo": "Take Photo",
+  "detect": "Detect Disease",
+  "result": "Detection Result",
+  "disease": "Disease",
+  "confidence": "Confidence",
+  "treatment": "Treatment",
+  "history": "History"
+}
