@@ -1348,32 +1348,5 @@
     "disease": "Northern Leaf Blight",
     "confidence": 91.91,
     "treatment": "Apply fungicides. Practice crop rotation."
-  },
-  {
-    "id": 151,
-    "timestamp": "2026-05-22 19:51:47",
-    "crop": "maize",
-    "image": "maize_20260522_195145_image.jpg",
-    "disease": "Common Rust",
-    "confidence": 78.8,
-    "treatment": "Use resistant varieties. Apply fungicides if severe."
-  },
-  {
-    "id": 152,
-    "timestamp": "2026-05-24 09:39:48",
-    "crop": "maize",
-    "image": "maize_20260524_093945_image.jpg",
-    "disease": "Healthy",
-    "confidence": 95.49,
-    "treatment": "Your maize crop is healthy! Continue good practices."
-  },
-  {
-    "id": 153,
-    "timestamp": "2026-05-24 09:40:32",
-    "crop": "maize",
-    "image": "maize_20260524_094031_image.jpg",
-    "disease": "Northern Leaf Blight",
-    "confidence": 97.72,
-    "treatment": "Apply fungicides. Practice crop rotation."
   }
 ]
