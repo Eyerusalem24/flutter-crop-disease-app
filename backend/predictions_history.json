@@ -1375,5 +1375,41 @@
     "disease": "Northern Leaf Blight",
     "confidence": 97.72,
     "treatment": "Apply fungicides. Practice crop rotation."
+  },
+  {
+    "id": 154,
+    "timestamp": "2026-05-24 14:21:08",
+    "crop": "maize",
+    "image": "maize_20260524_142106_image.jpg",
+    "disease": "Northern Leaf Blight",
+    "confidence": 91.83,
+    "treatment": "Apply fungicides. Practice crop rotation."
+  },
+  {
+    "id": 155,
+    "timestamp": "2026-05-24 14:31:46",
+    "crop": "maize",
+    "image": "maize_20260524_143144_image.jpg",
+    "disease": "Northern Leaf Blight",
+    "confidence": 80.2,
+    "treatment": "Apply fungicides. Practice crop rotation."
+  },
+  {
+    "id": 156,
+    "timestamp": "2026-05-29 09:57:31",
+    "crop": "maize",
+    "image": "maize_20260529_095724_image.jpg",
+    "disease": "Northern Leaf Blight",
+    "confidence": 91.87,
+    "treatment": "Apply fungicides. Practice crop rotation."
+  },
+  {
+    "id": 157,
+    "timestamp": "2026-05-29 10:08:41",
+    "crop": "maize",
+    "image": "maize_20260529_100840_image.jpg",
+    "disease": "Gray Leaf Spot",
+    "confidence": 97.22,
+    "treatment": "Apply fungicides. Remove infected leaves. Rotate crops for 2 years."
   }
 ]
