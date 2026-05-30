@@ -1,6 +1,5 @@
 name: crop_disease_app
 description: AI-Powered Crop Disease Detection
-
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -38,13 +37,18 @@ dependencies:
   path_provider: ^2.1.5
   path: ^1.9.0
 
-  # ✅ Permission handler (null safety supported)
+  # Permission handler
   permission_handler: ^11.0.0
- 
-  fl_chart: ^0.68.0  # For beautiful charts
-  intl: ^0.20.2     # For date formatting
-  share_plus: ^13.1.0
 
+  # Charts
+  fl_chart: ^0.68.0
+
+  # Date formatting
+  intl: ^0.20.2
+
+  # Sharing
+  share_plus: ^13.1.0
+  csv: ^6.0.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

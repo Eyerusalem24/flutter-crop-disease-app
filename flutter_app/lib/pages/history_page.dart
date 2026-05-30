@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import '../services/history_service.dart';
+import '../services/export_service.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -15,7 +16,6 @@ class _HistoryPageState extends State<HistoryPage> {
   bool _isLoading = true;
   bool _isAmharic = false;
 
-  // Amharic translations
   final Map<String, String> _labelsAm = {
     'Crop': 'ሰብል',
     'Disease': 'በሽታ',
@@ -49,25 +49,56 @@ class _HistoryPageState extends State<HistoryPage> {
     });
   }
 
+  Future<void> _exportHistory() async {
+    try {
+      final service = ExportService();
+      final file = await service.exportToCSV();
+
+      if (!mounted) return;
+
+      if (file == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("No data to export")),
+        );
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Exported: ${file.path}")),
+      );
+
+      await service.exportAndShare();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Export failed: $e")),
+      );
+    }
+  }
+
   Future<void> _deletePrediction(int id) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => _buildDeleteDialog(
         title: _isAmharic ? _labelsAm['Confirm Delete']! : 'Confirm Delete',
-        content: _isAmharic ? _labelsAm['Are you sure you want to delete this?']! : 'Are you sure you want to delete this prediction?',
+        content: _isAmharic
+            ? _labelsAm['Are you sure you want to delete this?']!
+            : 'Are you sure you want to delete this prediction?',
       ),
     );
 
-    if (confirm == true) {
-      await _historyService.deletePrediction(id);
-      await _loadHistory();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_isAmharic ? _labelsAm['History deleted']! : 'History deleted'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
+    if (confirm != true || !mounted) return;
+
+    await _historyService.deletePrediction(id);
+    await _loadHistory();
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_isAmharic ? _labelsAm['History deleted']! : 'History deleted'),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   Future<void> _clearAllHistory() async {
@@ -77,20 +108,25 @@ class _HistoryPageState extends State<HistoryPage> {
       context: context,
       builder: (context) => _buildDeleteDialog(
         title: _isAmharic ? _labelsAm['Clear All']! : 'Clear All History',
-        content: _isAmharic ? _labelsAm['Are you sure you want to clear all history?']! : 'Are you sure you want to clear all history? This cannot be undone.',
+        content: _isAmharic
+            ? _labelsAm['Are you sure you want to clear all history?']!
+            : 'Are you sure you want to clear all history? This cannot be undone.',
       ),
     );
 
-    if (confirm == true) {
-      await _historyService.clearHistory();
-      await _loadHistory();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_isAmharic ? _labelsAm['All history cleared']! : 'All history cleared'),
-          backgroundColor: Colors.green,
-        ),
-      );
-    }
+    if (confirm != true || !mounted) return;
+
+    await _historyService.clearHistory();
+    await _loadHistory();
+
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_isAmharic ? _labelsAm['All history cleared']! : 'All history cleared'),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   Widget _buildDeleteDialog({required String title, required String content}) {
@@ -141,7 +177,6 @@ class _HistoryPageState extends State<HistoryPage> {
         child: SafeArea(
           child: Column(
             children: [
-              // App Bar
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Row(
@@ -160,12 +195,10 @@ class _HistoryPageState extends State<HistoryPage> {
                       ),
                     ),
                     const Spacer(),
-                    // Language toggle
                     IconButton(
                       icon: const Icon(Icons.language, color: Colors.white),
                       onPressed: () => setState(() => _isAmharic = !_isAmharic),
                     ),
-                    // Clear all button
                     if (_predictions.isNotEmpty)
                       IconButton(
                         icon: const Icon(Icons.delete_sweep, color: Colors.white),
@@ -174,8 +207,6 @@ class _HistoryPageState extends State<HistoryPage> {
                   ],
                 ),
               ),
-
-              // Main content - White card
               Expanded(
                 child: Container(
                   width: double.infinity,
@@ -277,7 +308,6 @@ class _HistoryPageState extends State<HistoryPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Header with crop and date
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
@@ -311,14 +341,11 @@ class _HistoryPageState extends State<HistoryPage> {
                   ],
                 ),
               ),
-
-              // Body
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Disease name
                     Row(
                       children: [
                         Icon(Icons.science, size: 18, color: Colors.green[600]),
@@ -334,10 +361,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 12),
-
-                    // Confidence bar
                     Row(
                       children: [
                         Text(
@@ -369,10 +393,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 12),
-
-                    // Treatment preview
                     Row(
                       children: [
                         Icon(Icons.medical_services, size: 16, color: Colors.green[600]),
@@ -388,32 +409,24 @@ class _HistoryPageState extends State<HistoryPage> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 12),
-
-                    // Action buttons
                     Row(
                       children: [
-                        // Delete button
                         IconButton(
                           icon: Icon(Icons.delete_outline, size: 20, color: Colors.red.shade400),
                           onPressed: () => _deletePrediction(id),
-                          constraints: const BoxConstraints(),
-                          padding: EdgeInsets.zero,
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.download, color: Colors.green),
+                          onPressed: _exportHistory,
                         ),
                         const Spacer(),
-                        // View details button
                         TextButton.icon(
-                          onPressed: () {
-                            _showDetailDialog(item);
-                          },
+                          onPressed: () => _showDetailDialog(item),
                           icon: Icon(Icons.visibility, size: 18, color: Colors.green[600]),
                           label: Text(
                             _isAmharic ? 'ዝርዝር' : 'View Details',
                             style: TextStyle(color: Colors.green[600]),
-                          ),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
                           ),
                         ),
                       ],

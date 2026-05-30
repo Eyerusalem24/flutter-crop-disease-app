@@ -628,5 +628,104 @@
     "disease": "Gray Leaf Spot",
     "confidence": 93.62,
     "treatment": "Apply fungicides. Remove infected leaves. Rotate crops for 2 years."
+  },
+  {
+    "id": 71,
+    "timestamp": "2026-05-30 08:52:20",
+    "crop": "maize",
+    "image": "maize_20260530_085218_image.jpg",
+    "disease": "Healthy",
+    "confidence": 96.1,
+    "treatment": "Your maize crop is healthy! Continue good practices."
+  },
+  {
+    "id": 72,
+    "timestamp": "2026-05-30 09:56:32",
+    "crop": "maize",
+    "image": "maize_20260530_095629_image.jpg",
+    "disease": "Gray Leaf Spot",
+    "confidence": 83.59,
+    "treatment": "Apply fungicides. Remove infected leaves. Rotate crops for 2 years."
+  },
+  {
+    "id": 73,
+    "timestamp": "2026-05-30 10:23:24",
+    "crop": "maize",
+    "image": "maize_20260530_102322_image.jpg",
+    "disease": "Healthy",
+    "confidence": 97.24,
+    "treatment": "Your maize crop is healthy! Continue good practices."
+  },
+  {
+    "id": 74,
+    "timestamp": "2026-05-30 11:11:53",
+    "crop": "maize",
+    "image": "maize_20260530_111152_image.jpg",
+    "disease": "Common Rust",
+    "confidence": 84.72,
+    "treatment": "Use resistant varieties. Apply fungicides if severe."
+  },
+  {
+    "id": 75,
+    "timestamp": "2026-05-30 11:12:47",
+    "crop": "maize",
+    "image": "maize_20260530_111247_image.jpg",
+    "disease": "Northern Leaf Blight",
+    "confidence": 79.94,
+    "treatment": "Apply fungicides. Practice crop rotation."
+  },
+  {
+    "id": 76,
+    "timestamp": "2026-05-30 11:16:48",
+    "crop": "maize",
+    "image": "maize_20260530_111648_image.jpg",
+    "disease": "Common Rust",
+    "confidence": 79.51,
+    "treatment": "Use resistant varieties. Apply fungicides if severe."
+  },
+  {
+    "id": 77,
+    "timestamp": "2026-05-30 11:23:03",
+    "crop": "maize",
+    "image": "maize_20260530_112303_image.jpg",
+    "disease": "Gray Leaf Spot",
+    "confidence": 85.76,
+    "treatment": "Apply fungicides. Remove infected leaves. Rotate crops for 2 years."
+  },
+  {
+    "id": 78,
+    "timestamp": "2026-05-30 11:25:25",
+    "crop": "maize",
+    "image": "maize_20260530_112524_image.jpg",
+    "disease": "Gray Leaf Spot",
+    "confidence": 77.45,
+    "treatment": "Apply fungicides. Remove infected leaves. Rotate crops for 2 years."
+  },
+  {
+    "id": 79,
+    "timestamp": "2026-05-30 11:28:46",
+    "crop": "maize",
+    "image": "maize_20260530_112845_image.jpg",
+    "disease": "Northern Leaf Blight",
+    "confidence": 87.83,
+    "treatment": "Apply fungicides. Practice crop rotation."
+  },
+  {
+    "id": 80,
+    "timestamp": "2026-05-30 12:05:17",
+    "crop": "maize",
+    "image": "maize_20260530_120515_image.jpg",
+    "disease": "Common Rust",
+    "confidence": 90.0,
+    "treatment": "Use resistant varieties. Apply fungicides if severe."
+  },
+  {
+    "id": 81,
+    "timestamp": "2026-05-30 12:17:23",
+    "crop": "maize",
+    "image": "maize_20260530_121722_image.jpg",
+    "disease": "Healthy",
+    "confidence": 93.67,
+    "treatment": "Your maize crop is healthy! Continue good practices."
   }
 ]
