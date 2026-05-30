@@ -43,6 +43,7 @@ dependencies:
  
   fl_chart: ^0.68.0  # For beautiful charts
   intl: ^0.20.2     # For date formatting
+  share_plus: ^13.1.0
 
 dev_dependencies:
   flutter_test:

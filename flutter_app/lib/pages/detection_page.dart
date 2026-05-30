@@ -10,6 +10,7 @@ import '../services/camera_service.dart';
 import '../services/history_service.dart';
 import '../services/permission_service.dart';
 import '../services/analytics_service.dart';
+import 'package:share_plus/share_plus.dart';
 
 class DetectionPage extends StatefulWidget {
   final CameraDescription camera;

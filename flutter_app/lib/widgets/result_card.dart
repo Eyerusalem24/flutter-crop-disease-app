@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 
 class ResultCard extends StatelessWidget {
   final String disease;
@@ -17,46 +18,84 @@ class ResultCard extends StatelessWidget {
     required this.getSeverityLabel,
   });
 
+  void _shareResult(BuildContext context) {
+    final String shareText = '''
+🌾 CROP DISEASE DETECTION RESULT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📋 Disease: $disease
+📊 Confidence: ${confidence.toStringAsFixed(1)}%
+⚠️ Severity: ${getSeverityLabel(confidence)}
+
+💊 Treatment:
+$treatment
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 AI-Powered Crop Disease Detection App
+''';
+    
+    Share.share(shareText);
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasImage = imagePath.isNotEmpty;
 
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.only(top: 24),
       padding: const EdgeInsets.all(20),
+      margin: const EdgeInsets.only(top: 20),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: Colors.green.shade100, width: 1.5),
+        borderRadius: BorderRadius.circular(24),
         boxShadow: const [
           BoxShadow(
             color: Colors.black12,
-            blurRadius: 15,
-            offset: Offset(0, 5),
+            blurRadius: 12,
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image
-          if (hasImage)
+          // Header with Share Button
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'Detection Result',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
+              IconButton(
+                onPressed: () => _shareResult(context),
+                icon: const Icon(Icons.share, color: Colors.green),
+                tooltip: 'Share Result',
+              ),
+            ],
+          ),
+          const Divider(),
+
+          if (hasImage) ...[
+            const SizedBox(height: 8),
             ClipRRect(
               borderRadius: BorderRadius.circular(20),
               child: Image.file(
                 File(imagePath),
                 width: double.infinity,
-                height: 200,
+                height: 180,
                 fit: BoxFit.cover,
               ),
             ),
+          ],
 
           const SizedBox(height: 20),
 
-          // Disease name + confidence
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: Text(
@@ -64,62 +103,58 @@ class ResultCard extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black87,
                   ),
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.green.shade400, Colors.green.shade700],
-                  ),
-                  borderRadius: BorderRadius.circular(30),
+                  color: Colors.green.shade100,
+                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: Text(
                   '${confidence.toStringAsFixed(1)}%',
-                  style: const TextStyle(
-                    color: Colors.white,
+                  style: TextStyle(
+                    color: Colors.green.shade900,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
                   ),
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 18),
 
-          // Confidence bar
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: LinearProgressIndicator(
-              value: (confidence.clamp(0, 100)) / 100,
-              minHeight: 10,
-              backgroundColor: Colors.grey.shade200,
-              color: confidence >= 70 ? Colors.green : Colors.orange,
-            ),
+          LinearProgressIndicator(
+            value: (confidence.clamp(0, 100)) / 100,
+            minHeight: 12,
+            backgroundColor: Colors.grey.shade300,
+            borderRadius: BorderRadius.circular(12),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 22),
 
-          // Severity
           Container(
-            padding: const EdgeInsets.all(14),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: Colors.orange.shade50,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.orange.shade200),
             ),
             child: Row(
               children: [
-                Icon(Icons.warning_amber_rounded, color: Colors.orange.shade700),
+                Icon(
+                  Icons.warning_amber_rounded,
+                  color: Colors.orange.shade700,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Text(
                     'Severity: ${getSeverityLabel(confidence)}',
                     style: const TextStyle(
-                      fontSize: 15,
+                      fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -130,16 +165,18 @@ class ResultCard extends StatelessWidget {
 
           const SizedBox(height: 24),
 
-          // Treatment section
           Row(
             children: [
-              Icon(Icons.medical_services, color: Colors.green.shade600),
+              Icon(
+                Icons.medical_services,
+                color: Colors.green,
+              ),
               const SizedBox(width: 10),
               const Text(
-                'Recommended Treatment',
+                'Treatment',
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 18,
+                  fontSize: 20,
                 ),
               ),
             ],
@@ -153,14 +190,32 @@ class ResultCard extends StatelessWidget {
             decoration: BoxDecoration(
               color: Colors.green.shade50,
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: Colors.green.shade200),
             ),
             child: Text(
               treatment,
               style: const TextStyle(
-                height: 1.5,
-                fontSize: 14,
-                color: Colors.black87,
+                height: 1.6,
+                fontSize: 15,
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 16),
+          
+          // Share Button at bottom
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () => _shareResult(context),
+              icon: const Icon(Icons.share),
+              label: const Text('Share Result'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.green,
+                side: const BorderSide(color: Colors.green),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
               ),
             ),
           ),
