@@ -62,5 +62,6 @@ flutter:
 
   assets:
     - assets/translations/
+    - assets/test_dataset.json
 
   

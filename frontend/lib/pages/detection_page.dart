@@ -228,13 +228,22 @@ class _DetectionPageState extends State<DetectionPage>
     });
   }
 
-  String _getSeverityLabel(double confidence) {
-    final isAmharic = TranslationService.isAmharic;
-    if (confidence >= 90) return isAmharic ? 'ትንሽ' : 'Low';
-    if (confidence >= 70) return isAmharic ? 'መካከለኛ' : 'Moderate';
-    if (confidence >= 50) return isAmharic ? 'ከፍተኛ' : 'High';
-    return isAmharic ? 'ከባድ' : 'Severe';
+  String _getSeverityLabel(String disease, double confidence) {
+  final isAmharic = TranslationService.isAmharic;
+  
+  // For healthy plants, severity should be low/none
+  if (disease == 'Healthy' || disease == 'ጤናማ') {
+    if (confidence >= 90) return isAmharic ? 'የለም' : 'None';
+    if (confidence >= 70) return isAmharic ? 'ትንሽ' : 'Low';
+    return isAmharic ? 'ትንሽ' : 'Mild';
   }
+  
+  // For diseased plants
+  if (confidence >= 90) return isAmharic ? 'ከባድ' : 'Severe';
+  if (confidence >= 70) return isAmharic ? 'መካከለኛ' : 'Moderate';
+  if (confidence >= 50) return isAmharic ? 'ከፍተኛ' : 'High';
+  return isAmharic ? 'ትንሽ' : 'Low';
+}
 
   Widget _getCropIcon(String crop) {
     switch (crop) {
@@ -627,7 +636,7 @@ class _DetectionPageState extends State<DetectionPage>
                                 treatment: _resultTreatment,
                                 imagePath: _lastImagePath,
                                 geminiAdvice: _geminiAdvice,
-                                getSeverityLabel: _getSeverityLabel,
+                                getSeverityLabel: (confidence) => _getSeverityLabel(_resultDisease, confidence),
                               ),
                           ],
                         ),
