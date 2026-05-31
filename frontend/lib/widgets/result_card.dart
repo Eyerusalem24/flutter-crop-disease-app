@@ -8,6 +8,7 @@ class ResultCard extends StatelessWidget {
   final String treatment;
   final String imagePath;
   final String Function(double) getSeverityLabel;
+  final String? geminiAdvice;
 
   const ResultCard({
     super.key,
@@ -16,6 +17,7 @@ class ResultCard extends StatelessWidget {
     required this.treatment,
     required this.imagePath,
     required this.getSeverityLabel,
+    this.geminiAdvice,
   });
 
   void _shareResult(BuildContext context) {
@@ -30,6 +32,7 @@ class ResultCard extends StatelessWidget {
 💊 Treatment:
 $treatment
 
+${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$geminiAdvice\n' : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📱 AI-Powered Crop Disease Detection App
 ''';
@@ -40,6 +43,7 @@ $treatment
   @override
   Widget build(BuildContext context) {
     final hasImage = imagePath.isNotEmpty;
+    final hasGeminiAdvice = geminiAdvice != null && geminiAdvice!.isNotEmpty;
 
     return Container(
       width: double.infinity,
@@ -199,6 +203,45 @@ $treatment
               ),
             ),
           ),
+          
+          // GEMINI AI ADVICE SECTION
+          if (hasGeminiAdvice) ...[
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Icon(
+                  Icons.auto_awesome,
+                  color: Colors.purple,
+                ),
+                const SizedBox(width: 10),
+                const Text(
+                  'AI Expert Advice',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                    color: Colors.purple,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.purple.shade50,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: Colors.purple.shade200),
+              ),
+              child: Text(
+                geminiAdvice!,
+                style: const TextStyle(
+                  height: 1.6,
+                  fontSize: 14,
+                ),
+              ),
+            ),
+          ],
           
           const SizedBox(height: 16),
           

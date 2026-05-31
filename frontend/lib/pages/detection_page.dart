@@ -50,6 +50,7 @@ class _DetectionPageState extends State<DetectionPage>
   String _resultDisease = '';
   double _resultConfidence = 0;
   String _resultTreatment = '';
+  String _geminiAdvice = '';
   String _lastImagePath = '';
 
   String? _errorMessage;
@@ -278,6 +279,7 @@ class _DetectionPageState extends State<DetectionPage>
       final diseaseEn = result['disease'];
       final confidence = result['confidence'];
       final treatment = result['treatment'];
+      final geminiAdvice = result['gemini_advice'] ?? '';
       final isAmharic = TranslationService.isAmharic;
 
       if (!mounted) return;
@@ -286,6 +288,7 @@ class _DetectionPageState extends State<DetectionPage>
         _resultDisease = isAmharic ? (_diseaseAm[diseaseEn] ?? diseaseEn) : diseaseEn;
         _resultConfidence = confidence.toDouble();
         _resultTreatment = isAmharic ? (_treatmentAm[diseaseEn] ?? treatment) : treatment;
+        _geminiAdvice = geminiAdvice;
         _processing = false;
       });
 
@@ -328,6 +331,7 @@ class _DetectionPageState extends State<DetectionPage>
       final diseaseEn = result['disease'];
       final confidence = result['confidence'];
       final treatment = result['treatment'];
+      final geminiAdvice = result['gemini_advice'] ?? '';
       final isAmharic = TranslationService.isAmharic;
 
       if (!mounted) return;
@@ -336,6 +340,7 @@ class _DetectionPageState extends State<DetectionPage>
         _resultDisease = isAmharic ? (_diseaseAm[diseaseEn] ?? diseaseEn) : diseaseEn;
         _resultConfidence = confidence.toDouble();
         _resultTreatment = isAmharic ? (_treatmentAm[diseaseEn] ?? treatment) : treatment;
+        _geminiAdvice = geminiAdvice;
         _processing = false;
       });
 
@@ -402,7 +407,7 @@ class _DetectionPageState extends State<DetectionPage>
                           ),
                         ),
                         const Spacer(),
-                        const LanguageSelector(), // uses global language
+                        const LanguageSelector(),
                       ],
                     ),
                   ),
@@ -621,6 +626,7 @@ class _DetectionPageState extends State<DetectionPage>
                                 confidence: _resultConfidence,
                                 treatment: _resultTreatment,
                                 imagePath: _lastImagePath,
+                                geminiAdvice: _geminiAdvice,
                                 getSeverityLabel: _getSeverityLabel,
                               ),
                           ],

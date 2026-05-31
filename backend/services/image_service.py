@@ -45,7 +45,7 @@ class ImageService:
             return image_path
     
     @staticmethod
-    def preprocess_image(image_path, target_size=(224, 224)):
+    def preprocess_image(image_path, target_size=(244, 244)):
         img = cv2.imread(image_path)
         if img is None:
             raise ValueError("Could not read image")

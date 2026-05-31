@@ -52,3 +52,9 @@ frontend/pubspec.lock
 **/macos/Flutter/GeneratedPluginRegistrant.swift
 **/ios/Flutter/GeneratedPluginRegistrant.swift
 backend/static/uploads/
+backend/venv/
+backend/test_*.jpg
+backend/models/Dataset/
+frontend/linux/flutter/generated_*
+frontend/windows/flutter/generated_*
+frontend/macos/Flutter/GeneratedPluginRegistrant.swift
