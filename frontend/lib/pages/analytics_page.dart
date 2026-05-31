@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../services/analytics_service.dart';
 import '../services/history_service.dart';
+import '../services/translation_service.dart';
 
 class AnalyticsPage extends StatefulWidget {
   const AnalyticsPage({super.key});
@@ -20,8 +21,14 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   Map<String, dynamic> _summaryStats = {};
   MapEntry<String, int>? _mostCommonDisease;
   Map<String, Map<String, int>> _trends = {};
-  
-  bool _isAmharic = false;
+
+  // Helper method to get translated text
+  String _t(String key) {
+    return TranslationService.translate(key);
+  }
+
+  // Helper to get current language
+  bool get _isAmharic => TranslationService.currentLanguage == 'am';
 
   @override
   void initState() {
@@ -65,18 +72,43 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                       onPressed: () => Navigator.pop(context),
                     ),
                     const Spacer(),
-                    const Text(
-                      'Analytics Dashboard',
-                      style: TextStyle(
+                    Text(
+                      _t('analytics_dashboard'),
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
                     const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.language, color: Colors.white),
-                      onPressed: () => setState(() => _isAmharic = !_isAmharic),
+                    // Language toggle button
+                    GestureDetector(
+                      onTap: () async {
+                        final newLang = _isAmharic ? 'en' : 'am';
+                        await TranslationService.setLanguage(newLang);
+                        setState(() {});
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.language, color: Colors.white, size: 18),
+                            const SizedBox(width: 4),
+                            Text(
+                              _isAmharic ? 'EN' : 'አማ',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -101,23 +133,14 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                               padding: const EdgeInsets.all(20),
                               child: Column(
                                 children: [
-                                  // Summary Cards
                                   _buildSummaryCards(),
                                   const SizedBox(height: 24),
-                                  
-                                  // Most Common Disease Highlight
                                   _buildMostCommonCard(),
                                   const SizedBox(height: 24),
-                                  
-                                  // Disease Frequency Chart
                                   _buildDiseaseChart(),
                                   const SizedBox(height: 24),
-                                  
-                                  // Crop Distribution Chart
                                   _buildCropChart(),
                                   const SizedBox(height: 24),
-                                  
-                                  // Disease Trends
                                   _buildTrendsChart(),
                                   const SizedBox(height: 24),
                                 ],
@@ -140,19 +163,19 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
           Icon(Icons.analytics, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 16),
           Text(
-            _isAmharic ? 'ምንም መረጃ የለም' : 'No data yet',
+            _t('no_data_yet'),
             style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
           ),
           const SizedBox(height: 8),
           Text(
-            _isAmharic ? 'ውጤቶችን ለማየት በሽታዎችን ይለዩ' : 'Make some detections to see analytics',
+            _t('make_detections_to_see_analytics'),
             style: TextStyle(color: Colors.grey.shade500),
           ),
           const SizedBox(height: 24),
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.camera_alt),
-            label: Text(_isAmharic ? 'ወደ መቅረጫ' : 'Go to Camera'),
+            label: Text(_t('go_to_camera')),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
@@ -169,7 +192,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         Expanded(
           child: _buildStatCard(
             icon: Icons.analytics,
-            title: _isAmharic ? 'ጠቅላላ' : 'Total',
+            title: _t('total'),
             value: '${_summaryStats['total']}',
             color: Colors.blue,
           ),
@@ -178,7 +201,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
         Expanded(
           child: _buildStatCard(
             icon: Icons.percent,
-            title: _isAmharic ? 'አማካይ እምነት' : 'Avg Confidence',
+            title: _t('avg_confidence'),
             value: '${_summaryStats['avgConfidence']}%',
             color: Colors.green,
           ),
@@ -226,6 +249,10 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   Widget _buildMostCommonCard() {
     if (_mostCommonDisease == null) return const SizedBox.shrink();
     
+    String diseaseName = _isAmharic ? 
+      (_diseaseAm[_mostCommonDisease!.key] ?? _mostCommonDisease!.key) : 
+      _mostCommonDisease!.key;
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -250,12 +277,12 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _isAmharic ? 'በጣም የተለመደ በሽታ' : 'Most Common Disease',
+                  _t('most_common_disease'),
                   style: const TextStyle(color: Colors.white, fontSize: 12),
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  _mostCommonDisease!.key,
+                  diseaseName,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -264,7 +291,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${_mostCommonDisease!.value} ${_isAmharic ? 'ጊዜ' : 'detections'}',
+                  '${_mostCommonDisease!.value} ${_t('detections')}',
                   style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
               ],
@@ -278,7 +305,6 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   Widget _buildDiseaseChart() {
     if (_diseaseFrequency.isEmpty) return const SizedBox.shrink();
     
-    // Get top 5 diseases
     final entries = _diseaseFrequency.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     final top5 = entries.take(5).toList();
@@ -304,7 +330,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               Icon(Icons.pie_chart, color: Colors.green[700], size: 20),
               const SizedBox(width: 8),
               Text(
-                _isAmharic ? 'በሽታዎች ስርጭት' : 'Disease Distribution',
+                _t('disease_distribution'),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -318,18 +344,22 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             height: 200,
             child: PieChart(
               PieChartData(
-                sections: top5.map((entry) {
+                sections: top5.asMap().entries.map((entry) {
+                  String diseaseName = _isAmharic ? 
+                    (_diseaseAm[entry.value.key] ?? entry.value.key) : 
+                    entry.value.key;
                   return PieChartSectionData(
-                    value: entry.value.toDouble(),
-                    title: entry.key.length > 15 
-                        ? '${entry.key.substring(0, 12)}...' 
-                        : entry.key,
+                    value: entry.value.value.toDouble(),
+                    title: diseaseName.length > 15 
+                        ? '${diseaseName.substring(0, 12)}...' 
+                        : diseaseName,
                     radius: 80,
                     titleStyle: const TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),
+                    color: [Colors.blue, Colors.green, Colors.orange, Colors.red, Colors.purple][entry.key % 5],
                   );
                 }).toList(),
                 sectionsSpace: 2,
@@ -338,11 +368,13 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             ),
           ),
           const SizedBox(height: 8),
-          // Legend
           Wrap(
             spacing: 8,
             children: top5.asMap().entries.map((entry) {
               final colors = [Colors.blue, Colors.green, Colors.orange, Colors.red, Colors.purple];
+              String diseaseName = _isAmharic ? 
+                (_diseaseAm[entry.value.key] ?? entry.value.key) : 
+                entry.value.key;
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -356,9 +388,9 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    entry.value.key.length > 20 
-                        ? '${entry.value.key.substring(0, 17)}...' 
-                        : entry.value.key,
+                    diseaseName.length > 20 
+                        ? '${diseaseName.substring(0, 17)}...' 
+                        : diseaseName,
                     style: const TextStyle(fontSize: 10),
                   ),
                 ],
@@ -396,7 +428,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               Icon(Icons.agriculture, color: Colors.green[700], size: 20),
               const SizedBox(width: 8),
               Text(
-                _isAmharic ? 'ሰብሎች ስርጭት' : 'Crop Distribution',
+                _t('crop_distribution'),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -425,7 +457,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                           return Padding(
                             padding: const EdgeInsets.only(top: 8),
                             child: Text(
-                              entries[index].key.toUpperCase(),
+                              _t(entries[index].key),
                               style: const TextStyle(fontSize: 10),
                             ),
                           );
@@ -484,7 +516,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
               Icon(Icons.trending_up, color: Colors.green[700], size: 20),
               const SizedBox(width: 8),
               Text(
-                _isAmharic ? 'የበሽታ አዝማሚያ' : 'Disease Trends',
+                _t('disease_trends'),
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
@@ -533,10 +565,11 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
             ),
           ),
           const SizedBox(height: 8),
-          // Legend
           Wrap(
             spacing: 12,
             children: diseases.map((disease) {
+              String displayName = _isAmharic ? 
+                (_diseaseAm[disease] ?? disease) : disease;
               return Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -546,7 +579,7 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
                     color: _getDiseaseColor(disease),
                   ),
                   const SizedBox(width: 4),
-                  Text(disease.length > 15 ? '${disease.substring(0, 12)}...' : disease,
+                  Text(displayName.length > 15 ? '${displayName.substring(0, 12)}...' : displayName,
                     style: const TextStyle(fontSize: 10),
                   ),
                 ],
@@ -569,4 +602,21 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     int hash = disease.hashCode.abs();
     return colors[hash % colors.length];
   }
+
+  final Map<String, String> _diseaseAm = {
+    'Gray Leaf Spot': 'ግራጫ ቅጠል ነጠብጣብ',
+    'Common Rust': 'ዝገት',
+    'Northern Leaf Blight': 'ሰሜናዊ ቅጠል በሽታ',
+    'Healthy': 'ጤናማ',
+    'Late Blight': 'ዘግይቶ የሚከሰት በሽታ',
+    'Early Blight': 'ቀደምት በሽታ',
+    'Leaf Mold': 'ቅጠል ሻጋታ',
+    'Septoria Leaf Spot': 'ሴፕቶሪያ ቅጠል ነጠብጣብ',
+    'Stripe Rust': 'መስመራዊ ዝገት',
+    'Leaf Rust': 'ቅጠል ዝገት',
+    'Stem Rust': 'ግንድ ዝገት',
+    'Blast': 'ፍንዳታ',
+    'Blight': 'በሽታ',
+    'Sheath Rot': 'ሽፋን መበስበስ',
+  };
 }

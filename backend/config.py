@@ -14,3 +14,7 @@ class Config:
     def init_directories():
         os.makedirs(Config.UPLOAD_FOLDER, exist_ok=True)
         os.makedirs('models', exist_ok=True)
+
+# Language settings
+DEFAULT_LANGUAGE = 'en'  # 'en' for English, 'am' for Amharic
+SUPPORTED_LANGUAGES = ['en', 'am']

@@ -6,11 +6,14 @@ import 'pages/analytics_page.dart';
 import 'pages/field_survey_page.dart';
 import 'pages/confusion_matrix_page.dart';
 import 'pages/disease_encyclopedia_page.dart';
+import 'services/translation_service.dart';
+import 'widgets/language_selector.dart';
 
 List<CameraDescription> cameras = [];
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await TranslationService.init();  // Initialize translations
   cameras = await availableCameras();
   runApp(const CropDiseaseApp());
 }
@@ -21,7 +24,7 @@ class CropDiseaseApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Crop Disease Detection',
+      title: TranslationService.translate('app_title'),
       theme: ThemeData(
         primaryColor: Colors.green,
         fontFamily: 'Roboto',
@@ -33,12 +36,28 @@ class CropDiseaseApp extends StatelessWidget {
   }
 }
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  void _onLanguageChanged() {
+    setState(() {});  // Rebuild the whole page when language changes
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.green[700],
+        elevation: 0,
+        actions: [
+          LanguageSelector(onLanguageChanged: _onLanguageChanged),
+        ],
+      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -83,10 +102,10 @@ class HomePage extends StatelessWidget {
                         
                         const SizedBox(height: 12),
                         
-                        const Text(
-                          'Crop Disease\nDetection',
+                        Text(
+                          TranslationService.translate('app_title'),
                           textAlign: TextAlign.center,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
@@ -130,9 +149,9 @@ class HomePage extends StatelessWidget {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  const Text(
-                                    'What it does?',
-                                    style: TextStyle(
+                                  Text(
+                                    TranslationService.translate('what_it_does'),
+                                    style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.black87,
@@ -142,8 +161,8 @@ class HomePage extends StatelessWidget {
                                   
                                   _buildFeatureRow(
                                     Icons.camera_alt,
-                                    'Quick Disease Detection',
-                                    'Take a photo of any crop leaf',
+                                    'quick_detection',
+                                    'quick_detection_desc',
                                     Colors.green,
                                   ),
                                   
@@ -151,8 +170,8 @@ class HomePage extends StatelessWidget {
                                   
                                   _buildFeatureRow(
                                     Icons.science,
-                                    'AI Analysis',
-                                    'Advanced deep learning model',
+                                    'ai_analysis',
+                                    'ai_analysis_desc',
                                     Colors.blue,
                                   ),
                                   
@@ -160,8 +179,8 @@ class HomePage extends StatelessWidget {
                                   
                                   _buildFeatureRow(
                                     Icons.medical_information,
-                                    'Treatment Advice',
-                                    'Get instant treatment recommendations',
+                                    'treatment_advice',
+                                    'treatment_advice_desc',
                                     Colors.orange,
                                   ),
                                   
@@ -169,8 +188,8 @@ class HomePage extends StatelessWidget {
                                   
                                   _buildFeatureRow(
                                     Icons.history,
-                                    'Track History',
-                                    'Save all your detection results',
+                                    'track_history',
+                                    'track_history_desc',
                                     Colors.purple,
                                   ),
                                   
@@ -190,8 +209,8 @@ class HomePage extends StatelessWidget {
                                           );
                                         } else {
                                           ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('No camera found on this device'),
+                                            SnackBar(
+                                              content: Text(TranslationService.translate('no_camera')),
                                               backgroundColor: Colors.red,
                                             ),
                                           );
@@ -205,13 +224,7 @@ class HomePage extends StatelessWidget {
                                           borderRadius: BorderRadius.circular(30),
                                         ),
                                       ),
-                                      child: const Text(
-                                        'Get Started',
-                                        style: TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
+                                      child: Text(TranslationService.translate('get_started')),
                                     ),
                                   ),
                                   
@@ -235,10 +248,7 @@ class HomePage extends StatelessWidget {
                                           borderRadius: BorderRadius.circular(30),
                                         ),
                                       ),
-                                      child: const Text(
-                                        'View History',
-                                        style: TextStyle(fontSize: 14),
-                                      ),
+                                      child: Text(TranslationService.translate('view_history')),
                                     ),
                                   ),
                                   
@@ -255,7 +265,7 @@ class HomePage extends StatelessWidget {
                                         );
                                       },
                                       icon: const Icon(Icons.analytics),
-                                      label: const Text('Analytics Dashboard'),
+                                      label: Text(TranslationService.translate('analytics_dashboard')),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: Colors.green,
                                         side: const BorderSide(color: Colors.green),
@@ -282,7 +292,7 @@ class HomePage extends StatelessWidget {
                                         );
                                       },
                                       icon: const Icon(Icons.agriculture),
-                                      label: const Text('Field Survey'),
+                                      label: Text(TranslationService.translate('field_survey')),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: Colors.green,
                                         side: const BorderSide(color: Colors.green),
@@ -307,7 +317,7 @@ class HomePage extends StatelessWidget {
                                         );
                                       },
                                       icon: const Icon(Icons.grid_on),
-                                      label: const Text('Model Performance'),
+                                      label: Text(TranslationService.translate('model_performance')),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: Colors.green,
                                         side: const BorderSide(color: Colors.green),
@@ -332,7 +342,7 @@ class HomePage extends StatelessWidget {
                                         );
                                       },
                                       icon: const Icon(Icons.book),
-                                      label: const Text('Disease Encyclopedia'),
+                                      label: Text(TranslationService.translate('disease_encyclopedia')),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: Colors.green,
                                         side: const BorderSide(color: Colors.green),
@@ -362,7 +372,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatureRow(IconData icon, String title, String subtitle, Color color) {
+  Widget _buildFeatureRow(IconData icon, String titleKey, String subtitleKey, Color color) {
     return Row(
       children: [
         Container(
@@ -380,7 +390,7 @@ class HomePage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                title,
+                TranslationService.translate(titleKey),
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -389,7 +399,7 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                subtitle,
+                TranslationService.translate(subtitleKey),
                 style: TextStyle(
                   fontSize: 11,
                   color: Colors.grey[600],

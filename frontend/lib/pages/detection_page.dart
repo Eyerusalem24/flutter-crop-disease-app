@@ -5,11 +5,13 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'dart:io';
 
 import '../widgets/result_card.dart';
+import '../widgets/language_selector.dart';
 import '../services/api_service.dart';
 import '../services/camera_service.dart';
 import '../services/history_service.dart';
 import '../services/permission_service.dart';
 import '../services/analytics_service.dart';
+import '../services/translation_service.dart';
 import 'package:share_plus/share_plus.dart';
 
 class DetectionPage extends StatefulWidget {
@@ -33,7 +35,6 @@ class _DetectionPageState extends State<DetectionPage>
   final FlutterTts _flutterTts = FlutterTts();
 
   bool _processing = false;
-  bool _isAmharic = false;
   bool _cameraReady = false;
 
   final List<String> _crops = [
@@ -53,7 +54,7 @@ class _DetectionPageState extends State<DetectionPage>
 
   String? _errorMessage;
 
-  // Amharic translations
+  // Amharic translations for diseases
   final Map<String, String> _diseaseAm = {
     'Gray Leaf Spot': 'ግራጫ ቅጠል ነጠብጣብ',
     'Common Rust': 'ዝገት',
@@ -71,6 +72,7 @@ class _DetectionPageState extends State<DetectionPage>
     'Sheath Rot': 'ሽፋን መበስበስ',
   };
 
+  // Amharic translations for treatments
   final Map<String, String> _treatmentAm = {
     'Gray Leaf Spot': 'ፈንገስ ተከላካይ መድሀኒት ይጠቀሙ።',
     'Common Rust': 'ተከላካይ ዝርያዎችን ይጠቀሙ።',
@@ -88,7 +90,15 @@ class _DetectionPageState extends State<DetectionPage>
     'Sheath Rot': 'ፈንገስ ተከላካይ ይጠቀሙ።',
   };
 
-  // TEMPORARY - FOR TESTING ANALYTICS ONLY
+  // Amharic translations for crop names
+  final Map<String, String> _cropAm = {
+    'maize': 'በቆሎ',
+    'tomato': 'ቲማቲም',
+    'potato': 'ድንች',
+    'wheat': 'ስንዴ',
+    'rice': 'ሩዝ',
+  };
+
   Future<void> _generateTestData() async {
     final historyService = HistoryService();
     final List<String> testDiseases = [
@@ -124,11 +134,6 @@ class _DetectionPageState extends State<DetectionPage>
         _showError("No camera found on this device");
         return;
       }
-
-      print("✅ Available cameras: ${cameras.length}");
-      print("✅ Camera name: ${widget.camera.name}");
-      print(
-          "✅ Camera lens direction: ${widget.camera.lensDirection}");
     } catch (e) {
       print("❌ Camera check failed: $e");
       _showError("Camera error: $e");
@@ -143,27 +148,21 @@ class _DetectionPageState extends State<DetectionPage>
   }
 
   Future<void> _initializeApp() async {
-    final hasPermission =
-        await PermissionService.requestCameraPermission();
+    final hasPermission = await PermissionService.requestCameraPermission();
 
     if (!hasPermission) {
-      _showError(
-          "Camera permission is required for this app");
+      _showError("Camera permission is required for this app");
       return;
     }
 
     await _checkCameraAvailability();
-
     await _initCamera();
-
     await _initTts();
   }
 
   @override
-  void didChangeAppLifecycleState(
-      AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed &&
-        !_cameraReady) {
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_cameraReady) {
       _initCamera();
     }
   }
@@ -177,7 +176,6 @@ class _DetectionPageState extends State<DetectionPage>
 
     try {
       final service = CameraService(widget.camera);
-
       await service.initialize();
 
       if (!mounted) return;
@@ -190,11 +188,8 @@ class _DetectionPageState extends State<DetectionPage>
       print("✅ Camera initialized successfully");
     } catch (e) {
       print("❌ Camera initialization error: $e");
-
       if (!mounted) return;
-
-      _showError(
-          "Cannot access camera. Please check permissions.");
+      _showError("Cannot access camera. Please check permissions.");
     }
   }
 
@@ -204,8 +199,8 @@ class _DetectionPageState extends State<DetectionPage>
   }
 
   Future<void> _speak(String text) async {
-    await _flutterTts.setLanguage(
-        _isAmharic ? 'am-ET' : 'en-US');
+    final isAmharic = TranslationService.isAmharic;
+    await _flutterTts.setLanguage(isAmharic ? 'am-ET' : 'en-US');
     await _flutterTts.speak(text);
   }
 
@@ -227,42 +222,33 @@ class _DetectionPageState extends State<DetectionPage>
 
   void _clearError() {
     if (!mounted) return;
-
     setState(() {
       _errorMessage = null;
     });
   }
 
   String _getSeverityLabel(double confidence) {
-    if (confidence >= 90)
-      return _isAmharic ? 'ትንሽ' : 'Low';
-    if (confidence >= 70)
-      return _isAmharic ? 'መካከለኛ' : 'Moderate';
-    if (confidence >= 50)
-      return _isAmharic ? 'ከፍተኛ' : 'High';
-    return _isAmharic ? 'ከባድ' : 'Severe';
+    final isAmharic = TranslationService.isAmharic;
+    if (confidence >= 90) return isAmharic ? 'ትንሽ' : 'Low';
+    if (confidence >= 70) return isAmharic ? 'መካከለኛ' : 'Moderate';
+    if (confidence >= 50) return isAmharic ? 'ከፍተኛ' : 'High';
+    return isAmharic ? 'ከባድ' : 'Severe';
   }
 
   Widget _getCropIcon(String crop) {
     switch (crop) {
       case 'maize':
-        return Icon(Icons.grass,
-            size: 18, color: Colors.amber[700]);
+        return Icon(Icons.grass, size: 18, color: Colors.amber[700]);
       case 'tomato':
-        return Icon(Icons.circle,
-            size: 18, color: Colors.red);
+        return Icon(Icons.circle, size: 18, color: Colors.red);
       case 'potato':
-        return Icon(Icons.circle,
-            size: 18, color: Colors.brown);
+        return Icon(Icons.circle, size: 18, color: Colors.brown);
       case 'wheat':
-        return Icon(Icons.eco,
-            size: 18, color: Colors.orange);
+        return Icon(Icons.eco, size: 18, color: Colors.orange);
       case 'rice':
-        return Icon(Icons.grain,
-            size: 18, color: Colors.lightGreen);
+        return Icon(Icons.grain, size: 18, color: Colors.lightGreen);
       default:
-        return Icon(Icons.agriculture,
-            size: 18, color: Colors.green);
+        return Icon(Icons.agriculture, size: 18, color: Colors.green);
     }
   }
 
@@ -278,53 +264,28 @@ class _DetectionPageState extends State<DetectionPage>
     });
 
     try {
-      print("📸 Step 1: Capturing image...");
-
-      final imagePath =
-          await _cameraService!.captureImage();
-
-      print(
-          "📸 Step 2: Image captured at: $imagePath");
-
+      final imagePath = await _cameraService!.captureImage();
       _lastImagePath = imagePath;
 
-      print(
-          "📸 Step 3: Calling API for crop: $_selectedCrop");
-
-      final result = await _apiService
-          .predict(
-            imagePath: imagePath,
-            crop: _selectedCrop,
-          )
-          .timeout(
+      final result = await _apiService.predict(
+        imagePath: imagePath,
+        crop: _selectedCrop,
+      ).timeout(
         const Duration(seconds: 30),
-        onTimeout: () {
-          throw Exception(
-              "API timeout after 30 seconds");
-        },
+        onTimeout: () => throw Exception("API timeout after 30 seconds"),
       );
-
-      print("📸 Step 4: API Result: $result");
 
       final diseaseEn = result['disease'];
       final confidence = result['confidence'];
       final treatment = result['treatment'];
+      final isAmharic = TranslationService.isAmharic;
 
       if (!mounted) return;
 
       setState(() {
-        _resultDisease = _isAmharic
-            ? (_diseaseAm[diseaseEn] ?? diseaseEn)
-            : diseaseEn;
-
-        _resultConfidence =
-            confidence.toDouble();
-
-        _resultTreatment = _isAmharic
-            ? (_treatmentAm[diseaseEn] ??
-                treatment)
-            : treatment;
-
+        _resultDisease = isAmharic ? (_diseaseAm[diseaseEn] ?? diseaseEn) : diseaseEn;
+        _resultConfidence = confidence.toDouble();
+        _resultTreatment = isAmharic ? (_treatmentAm[diseaseEn] ?? treatment) : treatment;
         _processing = false;
       });
 
@@ -334,31 +295,21 @@ class _DetectionPageState extends State<DetectionPage>
         'confidence': _resultConfidence,
         'treatment': _resultTreatment,
         'imagePath': _lastImagePath,
-        'timestamp':
-            DateTime.now().toIso8601String(),
+        'timestamp': DateTime.now().toIso8601String(),
       });
 
-      _speak(_isAmharic
-          ? 'በሽታ ተገኝቷል'
-          : 'Disease detected');
+      _speak(isAmharic ? 'በሽታ ተገኝቷል' : 'Disease detected');
     } catch (e) {
       print("❌ Detection error: $e");
-
       if (!mounted) return;
-
-      setState(() {
-        _processing = false;
-      });
-
+      setState(() { _processing = false; });
       _showError("Detection failed: $e");
     }
   }
 
   Future<void> _pickImageFromGallery() async {
     final picker = ImagePicker();
-
-    final picked =
-        await picker.pickImage(source: ImageSource.gallery);
+    final picked = await picker.pickImage(source: ImageSource.gallery);
 
     if (picked == null) return;
 
@@ -377,22 +328,14 @@ class _DetectionPageState extends State<DetectionPage>
       final diseaseEn = result['disease'];
       final confidence = result['confidence'];
       final treatment = result['treatment'];
+      final isAmharic = TranslationService.isAmharic;
 
       if (!mounted) return;
 
       setState(() {
-        _resultDisease = _isAmharic
-            ? (_diseaseAm[diseaseEn] ?? diseaseEn)
-            : diseaseEn;
-
-        _resultConfidence =
-            confidence.toDouble();
-
-        _resultTreatment = _isAmharic
-            ? (_treatmentAm[diseaseEn] ??
-                treatment)
-            : treatment;
-
+        _resultDisease = isAmharic ? (_diseaseAm[diseaseEn] ?? diseaseEn) : diseaseEn;
+        _resultConfidence = confidence.toDouble();
+        _resultTreatment = isAmharic ? (_treatmentAm[diseaseEn] ?? treatment) : treatment;
         _processing = false;
       });
 
@@ -402,13 +345,10 @@ class _DetectionPageState extends State<DetectionPage>
         'confidence': _resultConfidence,
         'treatment': _resultTreatment,
         'imagePath': _lastImagePath,
-        'timestamp':
-            DateTime.now().toIso8601String(),
+        'timestamp': DateTime.now().toIso8601String(),
       });
 
-      _speak(_isAmharic
-          ? 'በሽታ ተገኝቷል'
-          : 'Disease detected');
+      _speak(isAmharic ? 'በሽታ ተገኝቷል' : 'Disease detected');
     } catch (e) {
       print("❌ Gallery error: $e");
       _showError("Analysis failed: $e");
@@ -425,508 +365,280 @@ class _DetectionPageState extends State<DetectionPage>
 
   @override
   Widget build(BuildContext context) {
-    final hasResult = _resultDisease.isNotEmpty &&
-        _resultConfidence > 0;
+    return ListenableBuilder(
+      listenable: TranslationService.instance,
+      builder: (context, child) {
+        final isAmharic = TranslationService.isAmharic;
+        final hasResult = _resultDisease.isNotEmpty && _resultConfidence > 0;
+        final screenWidth = MediaQuery.of(context).size.width;
 
-    final screenWidth =
-        MediaQuery.of(context).size.width;
-
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Colors.green[700]!,
-              Colors.green[400]!,
-            ],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.white),
-                      onPressed: () =>
-                          Navigator.pop(context),
-                    ),
-                    const Spacer(),
-                    const Text(
-                      'Crop Doctor',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight:
-                            FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(
-                          Icons.language,
-                          color: Colors.white),
-                      onPressed: () => setState(
-                          () => _isAmharic =
-                              !_isAmharic),
-                    ),
-                  ],
-                ),
+        return Scaffold(
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.green[700]!, Colors.green[400]!],
               ),
-
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration:
-                      const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius:
-                        BorderRadius.only(
-                      topLeft:
-                          Radius.circular(40),
-                      topRight:
-                          Radius.circular(40),
-                    ),
-                  ),
-                  child: SingleChildScrollView(
-                    padding:
-                        const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
                       children: [
-                        Row(
-                          children: [
-                            Icon(
-                                Icons.agriculture,
-                                size: 20,
-                                color: Colors
-                                    .green[700]),
-                            const SizedBox(
-                                width: 8),
-                            Text(
-                              'Select Crop Type',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight:
-                                    FontWeight.w600,
-                                color: Colors
-                                    .green[800],
-                              ),
-                            ),
-                          ],
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => Navigator.pop(context),
                         ),
-
-                        const SizedBox(
-                            height: 12),
-
-                        Wrap(
-                          spacing: 10,
-                          runSpacing: 10,
-                          children:
-                              _crops.map((crop) {
-                            final isSelected =
-                                _selectedCrop ==
-                                    crop;
-
-                            return FilterChip(
-                              avatar:
-                                  _getCropIcon(
-                                      crop),
-                              label: Text(
-                                crop
-                                    .toUpperCase(),
-                                style: TextStyle(
-                                  color: isSelected
-                                      ? Colors.white
-                                      : Colors
-                                          .green[800],
-                                  fontWeight:
-                                      isSelected
-                                          ? FontWeight
-                                              .bold
-                                          : FontWeight
-                                              .w500,
-                                  fontSize: 13,
-                                ),
-                              ),
-                              selected:
-                                  isSelected,
-                              onSelected:
-                                  _processing
-                                      ? null
-                                      : (selected) {
-                                          if (selected) {
-                                            setState(() =>
-                                                _selectedCrop =
-                                                    crop);
-
-                                            ScaffoldMessenger.of(
-                                                    context)
-                                                .showSnackBar(
-                                              SnackBar(
-                                                content:
-                                                    Text(
-                                                  '${crop.toUpperCase()} selected',
-                                                ),
-                                                duration:
-                                                    const Duration(
-                                                        seconds:
-                                                            1),
-                                                backgroundColor:
-                                                    Colors
-                                                        .green,
-                                              ),
-                                            );
-                                          }
-                                        },
-                              backgroundColor:
-                                  Colors.grey
-                                      .shade100,
-                              selectedColor:
-                                  Colors.green,
-                              checkmarkColor:
-                                  Colors.white,
-                              shape:
-                                  StadiumBorder(
-                                side: BorderSide(
-                                  color: isSelected
-                                      ? Colors.green
-                                      : Colors.grey
-                                          .shade300,
-                                ),
-                              ),
-                            );
-                          }).toList(),
-                        ),
-
-                        const SizedBox(
-                            height: 24),
-
-                        Center(
-                          child: Container(
-                            padding:
-                                const EdgeInsets
-                                    .symmetric(
-                              horizontal: 16,
-                              vertical: 8,
-                            ),
-                            decoration:
-                                BoxDecoration(
-                              color: Colors
-                                  .green.shade50,
-                              borderRadius:
-                                  BorderRadius
-                                      .circular(
-                                          30),
-                            ),
-                            child: Row(
-                              mainAxisSize:
-                                  MainAxisSize.min,
-                              children: [
-                                Icon(
-                                    Icons.camera_alt,
-                                    size: 18,
-                                    color: Colors
-                                        .green[700]),
-                                const SizedBox(
-                                    width: 8),
-                                Text(
-                                  _isAmharic
-                                      ? 'ምስል ይያዙ'
-                                      : 'Take a Photo',
-                                  style:
-                                      TextStyle(
-                                    fontSize: 14,
-                                    fontWeight:
-                                        FontWeight
-                                            .w600,
-                                    color: Colors
-                                        .green[800],
-                                  ),
-                                ),
-                              ],
-                            ),
+                        const Spacer(),
+                        const Text(
+                          'Crop Doctor',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
                         ),
-
-                        const SizedBox(
-                            height: 16),
-
-                        Center(
-                          child: !_cameraReady
-                              ? Container(
-                                  width:
-                                      screenWidth -
-                                          48,
-                                  height: 300,
-                                  decoration:
-                                      BoxDecoration(
-                                    color: Colors
-                                        .grey
-                                        .shade200,
-                                    borderRadius:
-                                        BorderRadius
-                                            .circular(
-                                                24),
-                                  ),
-                                  child: Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment
-                                              .center,
-                                      children: [
-                                        Icon(
-                                          Icons
-                                              .videocam_off,
-                                          size: 48,
-                                          color: Colors
-                                              .grey
-                                              .shade600,
-                                        ),
-                                        const SizedBox(
-                                            height:
-                                                12),
-                                        Text(
-                                          'Camera not available',
-                                          style:
-                                              TextStyle(
-                                            color: Colors
-                                                .grey
-                                                .shade600,
-                                          ),
-                                        ),
-                                        const SizedBox(
-                                            height:
-                                                8),
-                                        ElevatedButton(
-                                          onPressed:
-                                              _initCamera,
-                                          style:
-                                              ElevatedButton
-                                                  .styleFrom(
-                                            backgroundColor:
-                                                Colors
-                                                    .green,
-                                          ),
-                                          child:
-                                              const Text(
-                                                  'Retry'),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                              : ClipRRect(
-                                  borderRadius:
-                                      BorderRadius
-                                          .circular(
-                                              24),
-                                  child: SizedBox(
-                                    width:
-                                        screenWidth -
-                                            48,
-                                    height: 320,
-                                    child: _cameraService ==
-                                            null
-                                        ? const Center(
-                                            child:
-                                                CircularProgressIndicator(),
-                                          )
-                                        : CameraPreview(
-                                            _cameraService!
-                                                .controller),
-                                  ),
-                                ),
-                        ),
-
-                        const SizedBox(
-                            height: 24),
-
-                        Row(
-                          children: [
-                            Expanded(
-                              child:
-                                  ElevatedButton
-                                      .icon(
-                                onPressed:
-                                    _processing
-                                        ? null
-                                        : _captureAndDetect,
-                                icon: const Icon(
-                                    Icons.camera,
-                                    size: 20),
-                                label: const Text(
-                                  'Capture',
-                                  style: TextStyle(
-                                      fontSize:
-                                          16),
-                                ),
-                                style:
-                                    ElevatedButton
-                                        .styleFrom(
-                                  backgroundColor:
-                                      Colors.green,
-                                  foregroundColor:
-                                      Colors.white,
-                                  padding:
-                                      const EdgeInsets
-                                          .symmetric(
-                                              vertical:
-                                                  14),
-                                  shape:
-                                      RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius
-                                            .circular(
-                                                30),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const SizedBox(
-                                width: 16),
-                            Expanded(
-                              child:
-                                  OutlinedButton
-                                      .icon(
-                                onPressed:
-                                    _pickImageFromGallery,
-                                icon: const Icon(
-                                    Icons
-                                        .photo_library,
-                                    size: 20),
-                                label: const Text(
-                                  'Gallery',
-                                  style: TextStyle(
-                                      fontSize:
-                                          16),
-                                ),
-                                style:
-                                    OutlinedButton
-                                        .styleFrom(
-                                  foregroundColor:
-                                      Colors.green,
-                                  side: BorderSide(
-                                      color: Colors
-                                          .green),
-                                  padding:
-                                      const EdgeInsets
-                                          .symmetric(
-                                              vertical:
-                                                  14),
-                                  shape:
-                                      RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius
-                                            .circular(
-                                                30),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        if (_errorMessage !=
-                            null)
-                          Container(
-                            margin:
-                                const EdgeInsets
-                                    .only(
-                                        top: 16),
-                            padding:
-                                const EdgeInsets
-                                    .all(12),
-                            decoration:
-                                BoxDecoration(
-                              color: Colors
-                                  .red.shade50,
-                              borderRadius:
-                                  BorderRadius
-                                      .circular(
-                                          16),
-                              border: Border.all(
-                                  color: Colors.red
-                                      .shade200),
-                            ),
-                            child: Row(
-                              children: [
-                                Icon(Icons.error,
-                                    color:
-                                        Colors.red),
-                                const SizedBox(
-                                    width: 10),
-                                Expanded(
-                                    child: Text(
-                                        _errorMessage!)),
-                                IconButton(
-                                  icon: const Icon(
-                                      Icons.close,
-                                      size: 18),
-                                  onPressed:
-                                      _clearError,
-                                ),
-                              ],
-                            ),
-                          ),
-
-                        if (_processing)
-                          const Padding(
-                            padding:
-                                EdgeInsets
-                                    .symmetric(
-                                        vertical:
-                                            32),
-                            child: Column(
-                              children: [
-                                CircularProgressIndicator(),
-                                SizedBox(
-                                    height: 12),
-                                Text(
-                                    "Analyzing crop image..."),
-                              ],
-                            ),
-                          ),
-
-                        if (hasResult &&
-                            !_processing)
-                          ResultCard(
-                            disease:
-                                _resultDisease,
-                            confidence:
-                                _resultConfidence,
-                            treatment:
-                                _resultTreatment,
-                            imagePath:
-                                _lastImagePath,
-                            getSeverityLabel:
-                                _getSeverityLabel,
-                          ),
+                        const Spacer(),
+                        const LanguageSelector(), // uses global language
                       ],
                     ),
                   ),
-                ),
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(40),
+                          topRight: Radius.circular(40),
+                        ),
+                      ),
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(Icons.agriculture, size: 20, color: Colors.green[700]),
+                                const SizedBox(width: 8),
+                                Text(
+                                  isAmharic ? 'የሰብል አይነት ይምረጡ' : 'Select Crop Type',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.green[800],
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            Wrap(
+                              spacing: 10,
+                              runSpacing: 10,
+                              children: _crops.map((crop) {
+                                final isSelected = _selectedCrop == crop;
+                                return FilterChip(
+                                  avatar: _getCropIcon(crop),
+                                  label: Text(
+                                    isAmharic
+                                        ? (_cropAm[crop] ?? crop.toUpperCase())
+                                        : crop.toUpperCase(),
+                                    style: TextStyle(
+                                      color: isSelected ? Colors.white : Colors.green[800],
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                  selected: isSelected,
+                                  onSelected: _processing ? null : (selected) {
+                                    if (selected) {
+                                      setState(() => _selectedCrop = crop);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            isAmharic
+                                                ? '${_cropAm[crop] ?? crop.toUpperCase()} ተመርጧል'
+                                                : '${crop.toUpperCase()} selected',
+                                          ),
+                                          duration: const Duration(seconds: 1),
+                                          backgroundColor: Colors.green,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  backgroundColor: Colors.grey.shade100,
+                                  selectedColor: Colors.green,
+                                  checkmarkColor: Colors.white,
+                                  shape: StadiumBorder(
+                                    side: BorderSide(
+                                      color: isSelected ? Colors.green : Colors.grey.shade300,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 24),
+                            Center(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.camera_alt, size: 18, color: Colors.green[700]),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      isAmharic ? 'ምስል ይያዙ' : 'Take a Photo',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.green[800],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            Center(
+                              child: !_cameraReady
+                                  ? Container(
+                                      width: screenWidth - 48,
+                                      height: 300,
+                                      decoration: BoxDecoration(
+                                        color: Colors.grey.shade200,
+                                        borderRadius: BorderRadius.circular(24),
+                                      ),
+                                      child: Center(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.videocam_off, size: 48, color: Colors.grey.shade600),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              isAmharic ? 'ካሜራ አይገኝም' : 'Camera not available',
+                                              style: TextStyle(color: Colors.grey.shade600),
+                                            ),
+                                            const SizedBox(height: 8),
+                                            ElevatedButton(
+                                              onPressed: _initCamera,
+                                              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+                                              child: Text(isAmharic ? 'እንደገና ይሞክሩ' : 'Retry'),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    )
+                                  : ClipRRect(
+                                      borderRadius: BorderRadius.circular(24),
+                                      child: SizedBox(
+                                        width: screenWidth - 48,
+                                        height: 320,
+                                        child: _cameraService == null
+                                            ? const Center(child: CircularProgressIndicator())
+                                            : CameraPreview(_cameraService!.controller),
+                                      ),
+                                    ),
+                            ),
+                            const SizedBox(height: 24),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: _processing ? null : _captureAndDetect,
+                                    icon: const Icon(Icons.camera, size: 20),
+                                    label: Text(isAmharic ? 'ፎቶ ያንሱ' : 'Capture'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.green,
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: OutlinedButton.icon(
+                                    onPressed: _pickImageFromGallery,
+                                    icon: const Icon(Icons.photo_library, size: 20),
+                                    label: Text(isAmharic ? 'ማህደር' : 'Gallery'),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.green,
+                                      side: BorderSide(color: Colors.green),
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(30),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            if (_errorMessage != null)
+                              Container(
+                                margin: const EdgeInsets.only(top: 16),
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Colors.red.shade50,
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: Colors.red.shade200),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(Icons.error, color: Colors.red),
+                                    const SizedBox(width: 10),
+                                    Expanded(child: Text(_errorMessage!)),
+                                    IconButton(
+                                      icon: const Icon(Icons.close, size: 18),
+                                      onPressed: _clearError,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (_processing)
+                              const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 32),
+                                child: Column(
+                                  children: [
+                                    CircularProgressIndicator(),
+                                    SizedBox(height: 12),
+                                    Text("Analyzing crop image..."),
+                                  ],
+                                ),
+                              ),
+                            if (hasResult && !_processing)
+                              ResultCard(
+                                disease: _resultDisease,
+                                confidence: _resultConfidence,
+                                treatment: _resultTreatment,
+                                imagePath: _lastImagePath,
+                                getSeverityLabel: _getSeverityLabel,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
-      // ✅ FLOATING ACTION BUTTON - CORRECT PLACEMENT
-      floatingActionButton: FloatingActionButton(
-        onPressed: _generateTestData,
-        backgroundColor: Colors.green,
-        child: const Icon(Icons.add, color: Colors.white),
-      ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: _generateTestData,
+            backgroundColor: Colors.green,
+            child: const Icon(Icons.add, color: Colors.white),
+          ),
+        );
+      },
     );
   }
 }

@@ -2,6 +2,8 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import '../services/history_service.dart';
 import '../services/export_service.dart';
+import '../services/translation_service.dart';
+import '../widgets/language_selector.dart';
 
 class HistoryPage extends StatefulWidget {
   const HistoryPage({super.key});
@@ -14,25 +16,6 @@ class _HistoryPageState extends State<HistoryPage> {
   final HistoryService _historyService = HistoryService();
   List<Map<String, dynamic>> _predictions = [];
   bool _isLoading = true;
-  bool _isAmharic = false;
-
-  final Map<String, String> _labelsAm = {
-    'Crop': 'ሰብል',
-    'Disease': 'በሽታ',
-    'Confidence': 'እምነት',
-    'Treatment': 'ህክምና',
-    'Date': 'ቀን',
-    'No History': 'ምንም ታሪክ የለም',
-    'Clear All': 'ሁሉንም አጥፋ',
-    'Delete': 'ሰርዝ',
-    'Confirm Delete': 'መሰረዝ አረጋግጥ',
-    'Are you sure you want to delete this?': 'ይህን መሰረዝ እንደሚፈልጉ እርግጠኛ ነዎት?',
-    'Are you sure you want to clear all history?': 'ሁሉንም ታሪክ መሰረዝ እንደሚፈልጉ እርግጠኛ ነዎት?',
-    'Cancel': 'ይቅር',
-    'Confirm': 'አረጋግጥ',
-    'History deleted': 'ታሪክ ተሰርዟል',
-    'All history cleared': 'ሁሉም ታሪክ ተጠርጓል',
-  };
 
   @override
   void initState() {
@@ -58,19 +41,19 @@ class _HistoryPageState extends State<HistoryPage> {
 
       if (file == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("No data to export")),
+          SnackBar(content: Text(TranslationService.translate('no_data_export'))),
         );
         return;
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Exported: ${file.path}")),
+        SnackBar(content: Text("${TranslationService.translate('exported')}: ${file.path}")),
       );
 
       await service.exportAndShare();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Export failed: $e")),
+        SnackBar(content: Text("${TranslationService.translate('export_failed')}: $e")),
       );
     }
   }
@@ -79,10 +62,8 @@ class _HistoryPageState extends State<HistoryPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => _buildDeleteDialog(
-        title: _isAmharic ? _labelsAm['Confirm Delete']! : 'Confirm Delete',
-        content: _isAmharic
-            ? _labelsAm['Are you sure you want to delete this?']!
-            : 'Are you sure you want to delete this prediction?',
+        title: TranslationService.translate('confirm_delete'),
+        content: TranslationService.translate('delete_prediction_confirm'),
       ),
     );
 
@@ -95,7 +76,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(_isAmharic ? _labelsAm['History deleted']! : 'History deleted'),
+        content: Text(TranslationService.translate('history_deleted')),
         backgroundColor: Colors.green,
       ),
     );
@@ -107,10 +88,8 @@ class _HistoryPageState extends State<HistoryPage> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (context) => _buildDeleteDialog(
-        title: _isAmharic ? _labelsAm['Clear All']! : 'Clear All History',
-        content: _isAmharic
-            ? _labelsAm['Are you sure you want to clear all history?']!
-            : 'Are you sure you want to clear all history? This cannot be undone.',
+        title: TranslationService.translate('clear_all'),
+        content: TranslationService.translate('clear_all_confirm'),
       ),
     );
 
@@ -123,7 +102,7 @@ class _HistoryPageState extends State<HistoryPage> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(_isAmharic ? _labelsAm['All history cleared']! : 'All history cleared'),
+        content: Text(TranslationService.translate('all_history_cleared')),
         backgroundColor: Colors.green,
       ),
     );
@@ -137,12 +116,12 @@ class _HistoryPageState extends State<HistoryPage> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: Text(_isAmharic ? _labelsAm['Cancel']! : 'Cancel'),
+          child: Text(TranslationService.translate('cancel')),
         ),
         ElevatedButton(
           onPressed: () => Navigator.pop(context, true),
           style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-          child: Text(_isAmharic ? _labelsAm['Confirm']! : 'Delete'),
+          child: Text(TranslationService.translate('delete')),
         ),
       ],
     );
@@ -163,71 +142,90 @@ class _HistoryPageState extends State<HistoryPage> {
     return Colors.red;
   }
 
+  Widget _getCropIcon(String crop) {
+    switch (crop.toLowerCase()) {
+      case 'maize':
+        return Icon(Icons.grass, size: 18, color: Colors.amber[700]);
+      case 'tomato':
+        return Icon(Icons.circle, size: 18, color: Colors.red);
+      case 'potato':
+        return Icon(Icons.circle, size: 18, color: Colors.brown);
+      case 'wheat':
+        return Icon(Icons.eco, size: 18, color: Colors.orange);
+      case 'rice':
+        return Icon(Icons.grain, size: 18, color: Colors.lightGreen);
+      default:
+        return Icon(Icons.agriculture, size: 18, color: Colors.green);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.green[700]!, Colors.green[400]!],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.arrow_back, color: Colors.white),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    const Spacer(),
-                    const Text(
-                      'Detection History',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.language, color: Colors.white),
-                      onPressed: () => setState(() => _isAmharic = !_isAmharic),
-                    ),
-                    if (_predictions.isNotEmpty)
-                      IconButton(
-                        icon: const Icon(Icons.delete_sweep, color: Colors.white),
-                        onPressed: _clearAllHistory,
-                      ),
-                  ],
-                ),
+    return ListenableBuilder(
+      listenable: TranslationService.instance,
+      builder: (context, child) {
+        return Scaffold(
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.green[700]!, Colors.green[400]!],
               ),
-              Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(40),
-                      topRight: Radius.circular(40),
+            ),
+            child: SafeArea(
+              child: Column(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => Navigator.pop(context),
+                        ),
+                        const Spacer(),
+                        Text(
+                          TranslationService.translate('detection_history'),
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        ),
+                        const Spacer(),
+                        const LanguageSelector(),
+                        if (_predictions.isNotEmpty)
+                          IconButton(
+                            icon: const Icon(Icons.delete_sweep, color: Colors.white),
+                            onPressed: _clearAllHistory,
+                          ),
+                      ],
                     ),
                   ),
-                  child: _isLoading
-                      ? const Center(child: CircularProgressIndicator())
-                      : _predictions.isEmpty
-                          ? _buildEmptyState()
-                          : _buildHistoryList(),
-                ),
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(40),
+                          topRight: Radius.circular(40),
+                        ),
+                      ),
+                      child: _isLoading
+                          ? const Center(child: CircularProgressIndicator())
+                          : _predictions.isEmpty
+                              ? _buildEmptyState()
+                              : _buildHistoryList(),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -243,7 +241,7 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
           const SizedBox(height: 16),
           Text(
-            _isAmharic ? _labelsAm['No History']! : 'No detection history yet',
+            TranslationService.translate('no_history'),
             style: TextStyle(
               fontSize: 18,
               color: Colors.grey.shade500,
@@ -252,7 +250,7 @@ class _HistoryPageState extends State<HistoryPage> {
           ),
           const SizedBox(height: 8),
           Text(
-            _isAmharic ? 'ምስል ይያዙ እና ውጤቶች እዚህ ይታያሉ' : 'Take a photo and results will appear here',
+            TranslationService.translate('empty_history_hint'),
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey.shade400,
@@ -262,7 +260,7 @@ class _HistoryPageState extends State<HistoryPage> {
           ElevatedButton.icon(
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.camera_alt),
-            label: Text(_isAmharic ? 'ወደ መቅረጫ' : 'Go to Camera'),
+            label: Text(TranslationService.translate('go_to_camera')),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.green,
               foregroundColor: Colors.white,
@@ -365,7 +363,7 @@ class _HistoryPageState extends State<HistoryPage> {
                     Row(
                       children: [
                         Text(
-                          '${_isAmharic ? 'እምነት' : 'Confidence'}: ',
+                          '${TranslationService.translate('confidence')}: ',
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,
@@ -425,7 +423,7 @@ class _HistoryPageState extends State<HistoryPage> {
                           onPressed: () => _showDetailDialog(item),
                           icon: Icon(Icons.visibility, size: 18, color: Colors.green[600]),
                           label: Text(
-                            _isAmharic ? 'ዝርዝር' : 'View Details',
+                            TranslationService.translate('view_details'),
                             style: TextStyle(color: Colors.green[600]),
                           ),
                         ),
@@ -503,10 +501,10 @@ class _HistoryPageState extends State<HistoryPage> {
                 color: _getConfidenceColor(confidence),
               ),
               const SizedBox(height: 8),
-              Text('${confidence.toStringAsFixed(1)}% confidence'),
+              Text('${confidence.toStringAsFixed(1)}% ${TranslationService.translate('confidence')}'),
               const SizedBox(height: 16),
               Text(
-                'Treatment:',
+                '${TranslationService.translate('treatment')}:',
                 style: TextStyle(fontWeight: FontWeight.bold, color: Colors.green[700]),
               ),
               const SizedBox(height: 4),
@@ -522,22 +520,5 @@ class _HistoryPageState extends State<HistoryPage> {
         ),
       ),
     );
-  }
-
-  Widget _getCropIcon(String crop) {
-    switch (crop.toLowerCase()) {
-      case 'maize':
-        return Icon(Icons.grass, size: 18, color: Colors.amber[700]);
-      case 'tomato':
-        return Icon(Icons.circle, size: 18, color: Colors.red);
-      case 'potato':
-        return Icon(Icons.circle, size: 18, color: Colors.brown);
-      case 'wheat':
-        return Icon(Icons.eco, size: 18, color: Colors.orange);
-      case 'rice':
-        return Icon(Icons.grain, size: 18, color: Colors.lightGreen);
-      default:
-        return Icon(Icons.agriculture, size: 18, color: Colors.green);
-    }
   }
 }

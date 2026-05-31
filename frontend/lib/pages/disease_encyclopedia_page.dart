@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/disease_encyclopedia_service.dart';
+import '../services/translation_service.dart';
 
 class DiseaseEncyclopediaPage extends StatefulWidget {
   const DiseaseEncyclopediaPage({super.key});
@@ -15,6 +16,14 @@ class _DiseaseEncyclopediaPageState extends State<DiseaseEncyclopediaPage> {
   List<String> _diseases = [];
 
   final List<String> _crops = ['all', 'maize', 'tomato', 'potato', 'wheat', 'rice'];
+
+  // Helper method to get translated text
+  String _t(String key) {
+    return TranslationService.translate(key);
+  }
+
+  // Helper to get current language
+  bool get _isAmharic => TranslationService.currentLanguage == 'am';
 
   @override
   void initState() {
@@ -32,6 +41,14 @@ class _DiseaseEncyclopediaPageState extends State<DiseaseEncyclopediaPage> {
       _diseases = _diseases.where((d) => d.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
     }
     setState(() {});
+  }
+
+  String _getTextFromInfo(Map<String, dynamic>? info, String key, String amKey) {
+    if (info == null) return '';
+    if (_isAmharic) {
+      return info[amKey] ?? info[key] ?? '';
+    }
+    return info[key] ?? '';
   }
 
   @override
@@ -57,8 +74,39 @@ class _DiseaseEncyclopediaPageState extends State<DiseaseEncyclopediaPage> {
                       onPressed: () => Navigator.pop(context),
                     ),
                     const Spacer(),
-                    const Text('Disease Encyclopedia', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text(
+                      _t('disease_encyclopedia'),
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
                     const Spacer(),
+                    GestureDetector(
+                      onTap: () async {
+                        final newLang = _isAmharic ? 'en' : 'am';
+                        await TranslationService.setLanguage(newLang);
+                        setState(() {});
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.language, color: Colors.white, size: 18),
+                            const SizedBox(width: 4),
+                            Text(
+                              _isAmharic ? 'EN' : 'አማ',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -79,7 +127,7 @@ class _DiseaseEncyclopediaPageState extends State<DiseaseEncyclopediaPage> {
                             _loadDiseases();
                           },
                           decoration: InputDecoration(
-                            hintText: 'Search disease...',
+                            hintText: _t('search_disease'),
                             prefixIcon: const Icon(Icons.search),
                             border: OutlineInputBorder(borderRadius: BorderRadius.circular(30), borderSide: BorderSide.none),
                             filled: true,
@@ -99,7 +147,7 @@ class _DiseaseEncyclopediaPageState extends State<DiseaseEncyclopediaPage> {
                             return Padding(
                               padding: const EdgeInsets.only(right: 8),
                               child: FilterChip(
-                                label: Text(crop == 'all' ? 'All' : crop.toUpperCase()),
+                                label: Text(crop == 'all' ? _t('all') : _t(crop).toUpperCase()),
                                 selected: isSelected,
                                 onSelected: (_) {
                                   _selectedCrop = crop;
@@ -120,6 +168,15 @@ class _DiseaseEncyclopediaPageState extends State<DiseaseEncyclopediaPage> {
                           itemBuilder: (context, index) {
                             final name = _diseases[index];
                             final info = _service.getDiseaseInfo(name);
+                            String displayName = _isAmharic ? _getDiseaseAmharicName(name) : name;
+                            String symptomsText = '';
+                            if (info != null) {
+                              if (_isAmharic) {
+                                symptomsText = info['symptoms_am'] ?? info['symptoms'] ?? '';
+                              } else {
+                                symptomsText = info['symptoms'] ?? '';
+                              }
+                            }
                             return Card(
                               margin: const EdgeInsets.only(bottom: 12),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -133,8 +190,8 @@ class _DiseaseEncyclopediaPageState extends State<DiseaseEncyclopediaPage> {
                                   ),
                                   child: Icon(info?['icon'], color: Colors.green[700]),
                                 ),
-                                title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                subtitle: Text(info?['symptoms'] ?? '', maxLines: 2, overflow: TextOverflow.ellipsis),
+                                title: Text(displayName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                subtitle: Text(symptomsText, maxLines: 2, overflow: TextOverflow.ellipsis),
                                 trailing: const Icon(Icons.chevron_right, color: Colors.grey),
                                 onTap: () => _showDetail(name, info),
                               ),
@@ -153,7 +210,48 @@ class _DiseaseEncyclopediaPageState extends State<DiseaseEncyclopediaPage> {
     );
   }
 
+  String _getDiseaseAmharicName(String englishName) {
+    final Map<String, String> amharicNames = {
+      'Gray Leaf Spot': 'ግራጫ ቅጠል ነጠብጣብ',
+      'Common Rust': 'ዝገት',
+      'Northern Leaf Blight': 'ሰሜናዊ ቅጠል በሽታ',
+      'Healthy': 'ጤናማ',
+      'Late Blight': 'ዘግይቶ የሚከሰት በሽታ',
+      'Early Blight': 'ቀደምት በሽታ',
+      'Leaf Mold': 'ቅጠል ሻጋታ',
+      'Septoria Leaf Spot': 'ሴፕቶሪያ ቅጠል ነጠብጣብ',
+      'Stripe Rust': 'መስመራዊ ዝገት',
+      'Leaf Rust': 'ቅጠል ዝገት',
+      'Stem Rust': 'ግንድ ዝገት',
+      'Blast': 'ፍንዳታ',
+      'Blight': 'በሽታ',
+      'Sheath Rot': 'ሽፋን መበስበስ',
+    };
+    return amharicNames[englishName] ?? englishName;
+  }
+
   void _showDetail(String name, Map<String, dynamic>? info) {
+    String displayName = _isAmharic ? _getDiseaseAmharicName(name) : name;
+    
+    String symptoms = '';
+    String cause = '';
+    String treatment = '';
+    String prevention = '';
+    
+    if (info != null) {
+      if (_isAmharic) {
+        symptoms = info['symptoms_am'] ?? info['symptoms'] ?? '';
+        cause = info['cause_am'] ?? info['cause'] ?? '';
+        treatment = info['treatment_am'] ?? info['treatment'] ?? '';
+        prevention = info['prevention_am'] ?? info['prevention'] ?? '';
+      } else {
+        symptoms = info['symptoms'] ?? '';
+        cause = info['cause'] ?? '';
+        treatment = info['treatment'] ?? '';
+        prevention = info['prevention'] ?? '';
+      }
+    }
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -187,24 +285,24 @@ class _DiseaseEncyclopediaPageState extends State<DiseaseEncyclopediaPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(name, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
-                        if (info?['scientificName'] != 'N/A')
+                        Text(displayName, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+                        if (info?['scientificName'] != 'N/A' && info?['scientificName'] != null)
                           Text(info?['scientificName'], style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Colors.grey.shade600)),
                       ],
                     ),
                   ),
                 ]),
                 const SizedBox(height: 24),
-                _buildSection(Icons.description, 'Symptoms', info?['symptoms'], Colors.red),
+                _buildSection(Icons.description, _t('symptoms'), symptoms, Colors.red),
                 const SizedBox(height: 16),
-                _buildSection(Icons.science, 'Cause', info?['cause'], Colors.orange),
+                _buildSection(Icons.science, _t('cause'), cause, Colors.orange),
                 const SizedBox(height: 16),
-                _buildSection(Icons.medical_services, 'Treatment', info?['treatment'], Colors.green),
+                _buildSection(Icons.medical_services, _t('treatment'), treatment, Colors.green),
                 const SizedBox(height: 16),
-                _buildSection(Icons.shield, 'Prevention', info?['prevention'], Colors.purple),
+                _buildSection(Icons.shield, _t('prevention'), prevention, Colors.purple),
                 const SizedBox(height: 16),
                 if (info?['seasonalInfo'] != null)
-                  _buildSection(Icons.calendar_today, 'Seasonal Info', info?['seasonalInfo'], Colors.teal),
+                  _buildSection(Icons.calendar_today, _t('seasonal_info'), info?['seasonalInfo'], Colors.teal),
                 const SizedBox(height: 30),
               ],
             ),
@@ -214,7 +312,7 @@ class _DiseaseEncyclopediaPageState extends State<DiseaseEncyclopediaPage> {
     );
   }
 
-  Widget _buildSection(IconData icon, String title, String? content, Color color) {
+  Widget _buildSection(IconData icon, String title, String content, Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -226,7 +324,7 @@ class _DiseaseEncyclopediaPageState extends State<DiseaseEncyclopediaPage> {
           ],
         ),
         const SizedBox(height: 8),
-        Text(content ?? '', style: const TextStyle(height: 1.5)),
+        Text(content.isNotEmpty ? content : _t('not_available'), style: const TextStyle(height: 1.5)),
       ],
     );
   }
