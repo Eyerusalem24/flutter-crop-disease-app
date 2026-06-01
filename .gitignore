@@ -61,3 +61,5 @@ frontend/macos/Flutter/GeneratedPluginRegistrant.swift
 backend/test_accuracy.py
 backend/test_dataset.json
 backend/test_*.jpg
+.env
+backend/.env
