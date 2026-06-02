@@ -52,7 +52,7 @@ dependencies:
   csv: ^6.0.0
 
    # Supabase for authentication and cloud storage
-  supabase_flutter: ^2.8.0
+  supabase_flutter: ^2.12.4
 
   # Environment variables
   flutter_dotenv: ^5.1.0

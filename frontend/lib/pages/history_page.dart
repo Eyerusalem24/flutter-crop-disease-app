@@ -281,7 +281,7 @@ class _HistoryPageState extends State<HistoryPage> {
       itemCount: _predictions.length,
       itemBuilder: (context, index) {
         final item = _predictions[index];
-        final id = item['id'] as int;
+        final id = (item['id'] as int?) ?? 0;
         final crop = item['crop'] ?? 'Unknown';
         final disease = item['disease'] ?? 'Unknown';
         final confidence = (item['confidence'] as num?)?.toDouble() ?? 0.0;

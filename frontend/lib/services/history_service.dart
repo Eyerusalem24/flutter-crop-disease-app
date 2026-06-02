@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'supabase_service.dart';
 
 class HistoryService {
   static final HistoryService _instance = HistoryService._internal();
@@ -7,6 +8,7 @@ class HistoryService {
   HistoryService._internal();
 
   static Database? _database;
+  final SupabaseService _supabase = SupabaseService();
 
   Future<Database> get database async {
     if (_database != null) return _database!;
@@ -20,7 +22,7 @@ class HistoryService {
 
     return await openDatabase(
       path,
-      version: 2,  // ✅ Updated to version 2
+      version: 2,
       onCreate: (db, version) async {
         await db.execute('''
           CREATE TABLE predictions(
@@ -30,67 +32,87 @@ class HistoryService {
             confidence REAL,
             treatment TEXT,
             imagePath TEXT,
-            timestamp TEXT
+            timestamp TEXT,
+            synced INTEGER DEFAULT 0
           )
         ''');
-        await db.execute('''
-          CREATE TABLE survey_sessions(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            fieldName TEXT,
-            date TEXT,
-            totalPhotos INTEGER,
-            healthyCount INTEGER,
-            diseasedCount INTEGER,
-            diseaseBreakdown TEXT
-          )
-        ''');
-      },
-      onUpgrade: (db, oldVersion, newVersion) async {
-        // If upgrading from version 1 to 2, add the new table
-        if (oldVersion < 2) {
-          await db.execute('''
-            CREATE TABLE survey_sessions(
-              id INTEGER PRIMARY KEY AUTOINCREMENT,
-              fieldName TEXT,
-              date TEXT,
-              totalPhotos INTEGER,
-              healthyCount INTEGER,
-              diseasedCount INTEGER,
-              diseaseBreakdown TEXT
-            )
-          ''');
-        }
       },
     );
   }
 
-  Future<int> savePrediction(Map<String, dynamic> prediction) async {
+  Future<void> savePrediction(Map<String, dynamic> prediction) async {
     final db = await database;
-    return await db.insert('predictions', prediction);
+    
+    final id = await db.insert('predictions', {
+      'crop': prediction['crop'],
+      'disease': prediction['disease'],
+      'confidence': prediction['confidence'],
+      'treatment': prediction['treatment'],
+      'imagePath': prediction['imagePath'],
+      'timestamp': prediction['timestamp'],
+      'synced': 0,
+    });
+    
+    if (_supabase.isLoggedIn) {
+      await _supabase.savePrediction(prediction);
+      await db.update('predictions', {'synced': 1}, where: 'id = ?', whereArgs: [id]);
+    }
   }
 
-  Future<List<Map<String, dynamic>>> getPredictions({int limit = 50}) async {
+  Future<List<Map<String, dynamic>>> getPredictions({int limit = 1000, bool includeDemo = false}) async {
     final db = await database;
-
-    return await db.query(
+    final localPredictions = await db.query(
       'predictions',
       orderBy: 'timestamp DESC',
       limit: limit,
     );
-  }
-
-  Future<void> deletePrediction(int id) async {
-    final db = await database;
-
-    await db.delete(
-      'predictions',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    
+    // Handle null id safely
+    final safeLocal = localPredictions.map((p) {
+      return {
+        ...p,
+        'id': p['id'] as int? ?? 0,
+      };
+    }).toList();
+    
+    if (_supabase.isLoggedIn) {
+      final cloudPredictions = await _supabase.loadPredictions();
+      final allPredictions = [...safeLocal, ...cloudPredictions];
+      allPredictions.sort((a, b) => b['timestamp'].compareTo(a['timestamp']));
+      return allPredictions.take(limit).toList();
+    }
+    
+    return safeLocal;
   }
 
   Future<void> clearHistory() async {
     final db = await database;
     await db.delete('predictions');
+  }
+
+  Future<void> deletePrediction(int id) async {
+    final db = await database;
+    await db.delete('predictions', where: 'id = ?', whereArgs: [id]);
+  }
+  
+  Future<void> syncToCloud() async {
+    if (!_supabase.isLoggedIn) return;
+    
+    final db = await database;
+    final unsynced = await db.query('predictions', where: 'synced = 0');
+    
+    for (var pred in unsynced) {
+      await _supabase.savePrediction({
+        'crop': pred['crop'],
+        'disease': pred['disease'],
+        'confidence': pred['confidence'],
+        'treatment': pred['treatment'],
+        'imagePath': pred['imagePath'],
+        'timestamp': pred['timestamp'],
+      });
+      await db.update('predictions', {'synced': 1}, where: 'id = ?', whereArgs: [pred['id']]);
+    }
+    
+    print('✅ Synced ${unsynced.length} predictions to cloud');
   }
 }
