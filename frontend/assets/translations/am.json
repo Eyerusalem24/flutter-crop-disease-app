@@ -46,7 +46,7 @@
   "no_data_export": "ለማውጣት ምንም ውሂብ የለም",
   "exported": "ወጥቷል",
   "export_failed": "ማውጣት አልተሳካም",
-  "model_comparison":  "የሞዴል ንጽጽር" ,
-  "disease_calendar": "የበሽታ ቀን መቁጠሪያ"
-  
+  "model_comparison": "የሞዴል ንጽጽር",
+  "disease_calendar": "የበሽታ ቀን መቁጠሪያ",
+  "crop_rotation": "የሰብል መዞር እቅድ"
 }

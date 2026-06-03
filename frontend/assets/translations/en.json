@@ -46,5 +46,7 @@
   "no_data_export": "No data to export",
   "exported": "Exported",
   "export_failed": "Export failed",
-  "model_comparison": "Model Comparison"
+  "model_comparison": "Model Comparison",
+  "disease_calendar": "Disease Calendar",
+  "crop_rotation": "Crop Rotation Planner"
 }
