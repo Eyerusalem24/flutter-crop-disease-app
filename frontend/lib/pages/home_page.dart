@@ -7,6 +7,7 @@ import 'field_survey_page.dart';
 import 'confusion_matrix_page.dart';
 import 'disease_encyclopedia_page.dart';
 import 'model_comparison_page.dart';
+import 'disease_calendar_page.dart';
 import '../services/translation_service.dart';
 import '../widgets/language_selector.dart';
 
@@ -352,6 +353,31 @@ class _HomePageState extends State<HomePage> {
                                       },
                                       icon: const Icon(Icons.compare_arrows),
                                       label: Text(TranslationService.translate('model_comparison')),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.green,
+                                        side: const BorderSide(color: Colors.green),
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(30),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  
+                                  const SizedBox(height: 10),
+
+                                  // Disease Calendar Button
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => const DiseaseCalendarPage()),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.calendar_today),
+                                      label: Text(TranslationService.translate('disease_calendar')),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: Colors.green,
                                         side: const BorderSide(color: Colors.green),
