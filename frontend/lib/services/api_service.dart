@@ -3,11 +3,12 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  final String baseUrl = 'http://192.168.1.3:5000';  // IP
+  final String baseUrl = 'http://192.168.1.2:5000';  // IP
 
   Future<Map<String, dynamic>> predict({
     required String imagePath,
     required String crop,
+    required String language, 
   }) async {
     try {
       print("🌐 API: Reading file...");
@@ -22,6 +23,8 @@ class ApiService {
 
       request.fields['crop'] = crop;
       print("🌐 API: Crop: $crop");
+      request.fields['language'] = language;
+      print("🌐 API: Language: $language");
 
       request.files.add(
         http.MultipartFile.fromBytes(
@@ -44,7 +47,15 @@ class ApiService {
         throw Exception('Prediction failed: ${data['error'] ?? 'Unknown error'}');
       }
 
-      return data['prediction'];
+      // Return the full prediction including heatmap_url
+      final prediction = data['prediction'];
+      return {
+        'disease': prediction['disease'],
+        'confidence': prediction['confidence'],
+        'treatment': prediction['treatment'],
+        'gemini_advice': prediction['gemini_advice'],
+        'heatmap_url': prediction['heatmap_url'],  // Add this line
+      };
     } catch (e) {
       print("🌐 API Error: $e");
       throw Exception('API Error: $e');

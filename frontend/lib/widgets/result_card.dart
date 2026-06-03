@@ -4,6 +4,7 @@ import 'package:share_plus/share_plus.dart';
 import '../services/device_tts_service.dart';
 import '../services/translation_service.dart';
 import '../services/fertilizer_service.dart';
+import '../services/api_service.dart';
 
 class ResultCard extends StatelessWidget {
   final String disease;
@@ -12,6 +13,7 @@ class ResultCard extends StatelessWidget {
   final String imagePath;
   final String Function(double) getSeverityLabel;
   final String? geminiAdvice;
+  final String? heatmapUrl;
 
   const ResultCard({
     super.key,
@@ -21,6 +23,7 @@ class ResultCard extends StatelessWidget {
     required this.imagePath,
     required this.getSeverityLabel,
     this.geminiAdvice,
+    this.heatmapUrl,
   });
 
   void _shareResult(BuildContext context) {
@@ -59,7 +62,6 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
     final tts = DeviceTTSService();
     await tts.init();
     
-    // Get fertilizer recommendation
     final fertilizerRec = FertilizerService.getFertilizerRecommendation(disease, isAmharic ? 'am' : 'en');
     
     final fullText = isAmharic
@@ -91,6 +93,7 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
   Widget build(BuildContext context) {
     final hasImage = imagePath.isNotEmpty;
     final hasGeminiAdvice = geminiAdvice != null && geminiAdvice!.isNotEmpty;
+    final hasHeatmap = heatmapUrl != null && heatmapUrl!.isNotEmpty;
     final isAmharic = TranslationService.isAmharic;
     final fertilizerRec = FertilizerService.getFertilizerRecommendation(disease, isAmharic ? 'am' : 'en');
 
@@ -141,6 +144,7 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
           ),
           const Divider(),
 
+          // Original Image
           if (hasImage) ...[
             const SizedBox(height: 8),
             ClipRRect(
@@ -150,6 +154,104 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
                 width: double.infinity,
                 height: 180,
                 fit: BoxFit.cover,
+              ),
+            ),
+          ],
+
+          // HEATMAP SECTION (AI Focus Areas)
+          if (hasHeatmap) ...[
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.insights, size: 18, color: Colors.blue[700]),
+                      const SizedBox(width: 8),
+                      Text(
+                        isAmharic ? 'AI ትኩረት አካባቢዎች' : 'AI Focus Areas (Heatmap)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[700],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.network(
+                      '${ApiService().baseUrl}$heatmapUrl',
+                      width: double.infinity,
+                      height: 180,
+                      fit: BoxFit.cover,
+                      loadingBuilder: (context, child, loadingProgress) {
+                        if (loadingProgress == null) return child;
+                        return Container(
+                          height: 180,
+                          color: Colors.grey.shade200,
+                          child: const Center(
+                            child: CircularProgressIndicator(),
+                          ),
+                        );
+                      },
+                      errorBuilder: (context, error, stackTrace) {
+                        print('❌ Heatmap image error: $error');
+                        return Container(
+                          height: 180,
+                          color: Colors.grey.shade200,
+                          child: const Center(
+                            child: Text('Heatmap loading failed'),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isAmharic ? 'ቀይ: AI ትኩረት ያደረገባቸው ቦታዎች' : 'Red = Key features AI focused on',
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        isAmharic ? 'ሰማያዊ: አነስተኛ ጠቀሜታ' : 'Blue = Less relevant areas',
+                        style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],

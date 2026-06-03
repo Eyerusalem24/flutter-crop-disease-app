@@ -51,6 +51,7 @@ class _DetectionPageState extends State<DetectionPage>
   double _resultConfidence = 0;
   String _resultTreatment = '';
   String _geminiAdvice = '';
+  String _heatmapUrl = '';
   String _lastImagePath = '';
 
   String? _errorMessage;
@@ -275,9 +276,12 @@ class _DetectionPageState extends State<DetectionPage>
       final imagePath = await _cameraService!.captureImage();
       _lastImagePath = imagePath;
 
+      final isAmharic = TranslationService.isAmharic;
+      
       final result = await _apiService.predict(
         imagePath: imagePath,
         crop: _selectedCrop,
+        language: isAmharic ? 'am' : 'en',
       ).timeout(
         const Duration(seconds: 30),
         onTimeout: () => throw Exception("API timeout after 30 seconds"),
@@ -287,7 +291,10 @@ class _DetectionPageState extends State<DetectionPage>
       final confidence = result['confidence'];
       final treatment = result['treatment'];
       final geminiAdvice = result['gemini_advice'] ?? '';
-      final isAmharic = TranslationService.isAmharic;
+      final heatmapUrl = result['heatmap_url'] ?? '';
+
+      print('🔍 API Result - Disease: $diseaseEn, Confidence: $confidence');
+      print('🔍 Heatmap URL received: $heatmapUrl');
 
       if (!mounted) return;
 
@@ -296,7 +303,9 @@ class _DetectionPageState extends State<DetectionPage>
         _resultConfidence = confidence.toDouble();
         _resultTreatment = isAmharic ? (_treatmentAm[diseaseEn] ?? treatment) : treatment;
         _geminiAdvice = geminiAdvice;
+        _heatmapUrl = heatmapUrl;
         _processing = false;
+        print('✅ Result set - Disease: $_resultDisease, Confidence: $_resultConfidence');
       });
 
       await _historyService.savePrediction({
@@ -330,16 +339,21 @@ class _DetectionPageState extends State<DetectionPage>
     });
 
     try {
+      final isAmharic = TranslationService.isAmharic;
+      
       final result = await _apiService.predict(
         imagePath: picked.path,
         crop: _selectedCrop,
+        language: isAmharic ? 'am' : 'en',
       );
 
       final diseaseEn = result['disease'];
       final confidence = result['confidence'];
       final treatment = result['treatment'];
       final geminiAdvice = result['gemini_advice'] ?? '';
-      final isAmharic = TranslationService.isAmharic;
+      final heatmapUrl = result['heatmap_url'] ?? '';
+
+      print('🔍 Heatmap URL received: $heatmapUrl');
 
       if (!mounted) return;
 
@@ -348,6 +362,7 @@ class _DetectionPageState extends State<DetectionPage>
         _resultConfidence = confidence.toDouble();
         _resultTreatment = isAmharic ? (_treatmentAm[diseaseEn] ?? treatment) : treatment;
         _geminiAdvice = geminiAdvice;
+        _heatmapUrl = heatmapUrl;
         _processing = false;
       });
 
@@ -635,6 +650,7 @@ class _DetectionPageState extends State<DetectionPage>
                                 treatment: _resultTreatment,
                                 imagePath: _lastImagePath,
                                 geminiAdvice: _geminiAdvice,
+                                heatmapUrl: _heatmapUrl,
                                 getSeverityLabel: (confidence) => _getSeverityLabel(_resultDisease, confidence),
                               ),
                           ],

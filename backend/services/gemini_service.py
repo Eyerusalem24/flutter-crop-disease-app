@@ -17,27 +17,35 @@ class GeminiService:
         except Exception as e:
             print(f"❌ Gemini init error: {e}")
     
-    def get_advice(self, crop, disease, confidence, treatment):
+    def get_advice(self, crop, disease, confidence, treatment, language='en'):
         if self.model is None:
             return "AI not available (Gemini disabled)."
         
-        key = f"{crop}_{disease}_{int(confidence)}"
+        key = f"{crop}_{disease}_{int(confidence)}_{language}"
         
         if key in self.cache:
             print("⚡ CACHE HIT")
             return self.cache[key]
         
-        print("⚡ CACHE MISS → calling Gemini")
+        print(f"⚡ CACHE MISS → calling Gemini ({language})")
+        
+        # Language instruction
+        if language == 'am':
+            language_instruction = "Respond in Amharic (አማርኛ) language only. Use simple terms for Ethiopian farmers."
+        else:
+            language_instruction = "Respond in English language only."
         
         try:
             prompt = f"""
+{language_instruction}
+
 You are an agricultural expert for small-scale farmers in Ethiopia.
 Crop: {crop}
 Disease: {disease}
 Treatment: {treatment}
 Confidence: {confidence:.2f}%
 
-Explain simply for farmers in Ethiopia:
+Explain simply:
 1. What the disease is
 2. Why it happens
 3. Simple treatment steps

@@ -8,6 +8,7 @@ from services.image_service import ImageService
 from services.gemini_service import GeminiService
 from services.history_service import HistoryService
 from utils.validators import allowed_file
+from services.gradcam_service import GradCAMService
 
 bp = Blueprint('predict', __name__)
 model_loader = ModelLoader()
@@ -18,8 +19,9 @@ history_service = HistoryService()
 @bp.route('/predict', methods=['POST'])
 def predict():
     try:
-        # Get crop type
+        # Get crop type and language
         crop = request.form.get('crop', 'maize').lower()
+        language = request.form.get('language', 'en')  # Add language parameter
         
         if crop not in Config.SUPPORTED_CROPS:
             return jsonify({
@@ -57,13 +59,35 @@ def predict():
             "Consult local agricultural expert"
         )
         
-        # Get Gemini advice
-        gemini_advice = gemini_service.get_advice(crop, disease_name, confidence, treatment)
+        # Get Gemini advice with language parameter
+        gemini_advice = gemini_service.get_advice(crop, disease_name, confidence, treatment, language)
+        
+        # Generate Grad-CAM heatmap
+        heatmap_url = None
+        if model is not None:
+            try:
+                # Get class index (map disease name to index)
+                disease_classes = ['Gray Leaf Spot', 'Common Rust', 'Northern Leaf Blight', 'Healthy']
+                if disease_name in disease_classes:
+                    class_idx = disease_classes.index(disease_name)
+                    
+                    # Create GradCAM service and generate heatmap
+                    gradcam = GradCAMService(model)
+                    heatmap = gradcam.get_heatmap(processed_img, class_idx)
+                    
+                    if heatmap is not None:
+                        heatmap_filename = f"{crop}_{timestamp}_heatmap.jpg"
+                        heatmap_path = os.path.join(Config.UPLOAD_FOLDER, heatmap_filename)
+                        gradcam.save_heatmap(enhanced_path, heatmap, heatmap_path)
+                        heatmap_url = f"/static/uploads/{heatmap_filename}"
+                        print(f"✅ Heatmap generated: {heatmap_url}")
+            except Exception as e:
+                print(f"⚠️ Heatmap generation failed: {e}")
         
         # Save to history
         history_service.save_to_history(crop, filename, disease_name, confidence, treatment)
         
-        # Return result
+        # Return result with heatmap
         return jsonify({
             'status': 'success',
             'crop': crop,
@@ -72,7 +96,8 @@ def predict():
                 'confidence': confidence,
                 'treatment': treatment,
                 'gemini_advice': gemini_advice,
-                'enhanced': True
+                'enhanced': True,
+                'heatmap_url': heatmap_url
             },
             'image_url': f"/static/uploads/{os.path.basename(enhanced_path)}"
         })
