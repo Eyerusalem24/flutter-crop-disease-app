@@ -229,21 +229,19 @@ class _DetectionPageState extends State<DetectionPage>
   }
 
   String _getSeverityLabel(String disease, double confidence) {
-  final isAmharic = TranslationService.isAmharic;
-  
-  // For healthy plants, severity should be low/none
-  if (disease == 'Healthy' || disease == 'ጤናማ') {
-    if (confidence >= 90) return isAmharic ? 'የለም' : 'None';
-    if (confidence >= 70) return isAmharic ? 'ትንሽ' : 'Low';
-    return isAmharic ? 'ትንሽ' : 'Mild';
+    final isAmharic = TranslationService.isAmharic;
+    
+    if (disease == 'Healthy' || disease == 'ጤናማ') {
+      if (confidence >= 90) return isAmharic ? 'የለም' : 'None';
+      if (confidence >= 70) return isAmharic ? 'ትንሽ' : 'Low';
+      return isAmharic ? 'ትንሽ' : 'Mild';
+    }
+    
+    if (confidence >= 90) return isAmharic ? 'ከባድ' : 'Severe';
+    if (confidence >= 70) return isAmharic ? 'መካከለኛ' : 'Moderate';
+    if (confidence >= 50) return isAmharic ? 'ከፍተኛ' : 'High';
+    return isAmharic ? 'ትንሽ' : 'Low';
   }
-  
-  // For diseased plants
-  if (confidence >= 90) return isAmharic ? 'ከባድ' : 'Severe';
-  if (confidence >= 70) return isAmharic ? 'መካከለኛ' : 'Moderate';
-  if (confidence >= 50) return isAmharic ? 'ከፍተኛ' : 'High';
-  return isAmharic ? 'ትንሽ' : 'Low';
-}
 
   Widget _getCropIcon(String crop) {
     switch (crop) {
@@ -631,6 +629,7 @@ class _DetectionPageState extends State<DetectionPage>
                               ),
                             if (hasResult && !_processing)
                               ResultCard(
+                                key: ValueKey('result_${_resultDisease}_${_resultConfidence.toStringAsFixed(1)}'),
                                 disease: _resultDisease,
                                 confidence: _resultConfidence,
                                 treatment: _resultTreatment,

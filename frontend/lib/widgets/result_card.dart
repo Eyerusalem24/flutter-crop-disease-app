@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
 import '../services/device_tts_service.dart';
 import '../services/translation_service.dart';
+import '../services/fertilizer_service.dart';
 
 class ResultCard extends StatelessWidget {
   final String disease;
@@ -23,6 +24,9 @@ class ResultCard extends StatelessWidget {
   });
 
   void _shareResult(BuildContext context) {
+    final isAmharic = TranslationService.isAmharic;
+    final fertilizerRec = FertilizerService.getFertilizerRecommendation(disease, isAmharic ? 'am' : 'en');
+    
     final String shareText = '''
 🌾 CROP DISEASE DETECTION RESULT
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -33,6 +37,14 @@ class ResultCard extends StatelessWidget {
 
 💊 Treatment:
 $treatment
+
+🌱 FERTILIZER RECOMMENDATION:
+📌 Fertilizer: ${fertilizerRec['fertilizer']}
+📌 Application: ${fertilizerRec['application']}
+📌 Organic Alternative: ${fertilizerRec['organic_alternative']}
+📌 Timing: ${fertilizerRec['timing']}
+📌 Frequency: ${fertilizerRec['frequency']}
+📌 Precautions: ${fertilizerRec['precautions']}
 
 ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$geminiAdvice\n' : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -47,14 +59,32 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
     final tts = DeviceTTSService();
     await tts.init();
     
-    await tts.speakResult(
-      {
-        'disease': disease,
-        'confidence': confidence.toStringAsFixed(1),
-        'treatment': treatment,
-      },
-      isAmharic ? 'am' : 'en',
-    );
+    // Get fertilizer recommendation
+    final fertilizerRec = FertilizerService.getFertilizerRecommendation(disease, isAmharic ? 'am' : 'en');
+    
+    final fullText = isAmharic
+        ? 'የበሽታ ውጤት። '
+            'በሽታ፦ $disease። '
+            'እምነት፦ ${confidence.toStringAsFixed(1)} በመቶ። '
+            'ህክምና፦ $treatment። '
+            'ማዳበሪያ ምክር፦ ${fertilizerRec['fertilizer']}። '
+            'አፕሊኬሽን፦ ${fertilizerRec['application']}። '
+            'ኦርጋኒክ አማራጭ፦ ${fertilizerRec['organic_alternative']}። '
+            'ጊዜ፦ ${fertilizerRec['timing']}። '
+            'ድግግሞሽ፦ ${fertilizerRec['frequency']}። '
+            'ጥንቃቄዎች፦ ${fertilizerRec['precautions']}።'
+        : 'Detection result. '
+            'Disease: $disease. '
+            'Confidence: ${confidence.toStringAsFixed(1)} percent. '
+            'Treatment: $treatment. '
+            'Fertilizer: ${fertilizerRec['fertilizer']}. '
+            'Application: ${fertilizerRec['application']}. '
+            'Organic alternative: ${fertilizerRec['organic_alternative']}. '
+            'Timing: ${fertilizerRec['timing']}. '
+            'Frequency: ${fertilizerRec['frequency']}. '
+            'Precautions: ${fertilizerRec['precautions']}.';
+    
+    await tts.speak(fullText, language: isAmharic ? 'am' : 'en');
   }
 
   @override
@@ -62,6 +92,7 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
     final hasImage = imagePath.isNotEmpty;
     final hasGeminiAdvice = geminiAdvice != null && geminiAdvice!.isNotEmpty;
     final isAmharic = TranslationService.isAmharic;
+    final fertilizerRec = FertilizerService.getFertilizerRecommendation(disease, isAmharic ? 'am' : 'en');
 
     return Container(
       width: double.infinity,
@@ -94,13 +125,11 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
               ),
               Row(
                 children: [
-                  // Speaker button for voice output
                   IconButton(
                     onPressed: () => _speakResult(context),
                     icon: const Icon(Icons.volume_up, color: Colors.blue),
                     tooltip: isAmharic ? 'ውጤቱን ያንብቡ' : 'Read Result Aloud',
                   ),
-                  // Share button
                   IconButton(
                     onPressed: () => _shareResult(context),
                     icon: const Icon(Icons.share, color: Colors.green),
@@ -198,6 +227,7 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
 
           const SizedBox(height: 24),
 
+          // Treatment Section
           Row(
             children: [
               Icon(
@@ -214,9 +244,7 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
               ),
             ],
           ),
-
           const SizedBox(height: 12),
-
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -233,6 +261,51 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
             ),
           ),
           
+          // Fertilizer Recommendation Section
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              Icon(
+                Icons.grass,
+                color: Colors.brown,
+              ),
+              const SizedBox(width: 10),
+              Text(
+                isAmharic ? 'የማዳበሪያ ምክር' : 'Fertilizer Recommendation',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.brown.shade50,
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(color: Colors.brown.shade200),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildFertilizerRow(isAmharic ? 'ማዳበሪያ' : 'Fertilizer', fertilizerRec['fertilizer']),
+                const SizedBox(height: 8),
+                _buildFertilizerRow(isAmharic ? 'አፕሊኬሽን' : 'Application', fertilizerRec['application']),
+                const SizedBox(height: 8),
+                _buildFertilizerRow(isAmharic ? 'ኦርጋኒክ አማራጭ' : 'Organic Alternative', fertilizerRec['organic_alternative']),
+                const SizedBox(height: 8),
+                _buildFertilizerRow(isAmharic ? 'ጊዜ' : 'Timing', fertilizerRec['timing']),
+                const SizedBox(height: 8),
+                _buildFertilizerRow(isAmharic ? 'ድግግሞሽ' : 'Frequency', fertilizerRec['frequency']),
+                const SizedBox(height: 8),
+                _buildFertilizerRow(isAmharic ? 'ጥንቃቄዎች' : 'Precautions', fertilizerRec['precautions']),
+              ],
+            ),
+          ),
+          
           // GEMINI AI ADVICE SECTION
           if (hasGeminiAdvice) ...[
             const SizedBox(height: 24),
@@ -243,9 +316,9 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
                   color: Colors.purple,
                 ),
                 const SizedBox(width: 10),
-                const Text(
-                  'AI Expert Advice',
-                  style: TextStyle(
+                Text(
+                  isAmharic ? 'AI የባለሙያ ምክር' : 'AI Expert Advice',
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                     color: Colors.purple,
@@ -274,7 +347,6 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
           
           const SizedBox(height: 16),
           
-          // Share Button at bottom
           SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
@@ -293,6 +365,33 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildFertilizerRow(String label, String value) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        SizedBox(
+          width: 120,
+          child: Text(
+            label,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 13,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontSize: 13,
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
