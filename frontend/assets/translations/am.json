@@ -28,5 +28,24 @@
   "treatment": "ህክምና",
   "prevention": "መከላከያ",
   "seasonal_info": "የወቅት መረጃ",
-  "not_available": "መረጃ አይገኝም"
+  "not_available": "መረጃ አይገኝም",
+  "detection_history": "የምርመራ ታሪክ",
+  "no_history": "ምንም የምርመራ ታሪክ የለም",
+  "empty_history_hint": "ምስል ይያዙ እና ውጤቶች እዚህ ይታያሉ",
+  "go_to_camera": "ወደ መቅረጫ",
+  "confidence": "እምነት",
+  "view_details": "ዝርዝር",
+  "confirm_delete": "መሰረዝ አረጋግጥ",
+  "delete_prediction_confirm": "ይህን ትንበያ መሰረዝ እንደሚፈልጉ እርግጠኛ ነዎት?",
+  "clear_all": "ሁሉንም ታሪክ አጥፋ",
+  "clear_all_confirm": "ሁሉንም ታሪክ መሰረዝ እንደሚፈልጉ እርግጠኛ ነዎት? ይህ ሊቀለበስ አይችልም",
+  "history_deleted": "ታሪክ ተሰርዟል",
+  "all_history_cleared": "ሁሉም ታሪክ ተጠርጓል",
+  "cancel": "ይቅር",
+  "delete": "ሰርዝ",
+  "no_data_export": "ለማውጣት ምንም ውሂብ የለም",
+  "exported": "ወጥቷል",
+  "export_failed": "ማውጣት አልተሳካም",
+  "model_comparison":  "የሞዴል ንጽጽር"
+  
 }

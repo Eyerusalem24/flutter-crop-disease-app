@@ -6,12 +6,13 @@ import 'analytics_page.dart';
 import 'field_survey_page.dart';
 import 'confusion_matrix_page.dart';
 import 'disease_encyclopedia_page.dart';
+import 'model_comparison_page.dart';
 import '../services/translation_service.dart';
 import '../widgets/language_selector.dart';
 
 class HomePage extends StatefulWidget {
-  final List<CameraDescription> cameras;
-  const HomePage({super.key, required this.cameras});
+  final List<CameraDescription>? cameras;
+  const HomePage({super.key, this.cameras});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -24,7 +25,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final cameras = widget.cameras;
+    final cameras = widget.cameras ?? [];
     
     return Scaffold(
       appBar: AppBar(
@@ -326,6 +327,31 @@ class _HomePageState extends State<HomePage> {
                                       },
                                       icon: const Icon(Icons.book),
                                       label: Text(TranslationService.translate('disease_encyclopedia')),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: Colors.green,
+                                        side: const BorderSide(color: Colors.green),
+                                        padding: const EdgeInsets.symmetric(vertical: 12),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(30),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  
+                                  const SizedBox(height: 10),
+
+                                  // Model Comparison Button
+                                  SizedBox(
+                                    width: double.infinity,
+                                    child: OutlinedButton.icon(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(builder: (context) => const ModelComparisonPage()),
+                                        );
+                                      },
+                                      icon: const Icon(Icons.compare_arrows),
+                                      label: Text(TranslationService.translate('model_comparison')),
                                       style: OutlinedButton.styleFrom(
                                         foregroundColor: Colors.green,
                                         side: const BorderSide(color: Colors.green),
