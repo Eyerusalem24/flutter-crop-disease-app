@@ -3,6 +3,7 @@ import 'package:camera/camera.dart';
 import 'pages/auth_wrapper.dart';
 import 'services/translation_service.dart';
 import 'services/supabase_service.dart';
+import 'services/device_tts_service.dart';
 
 List<CameraDescription> cameras = [];
 
@@ -15,6 +16,10 @@ void main() async {
   
   // Initialize translations
   await TranslationService.init();
+
+  // Initialize Device TTS (no API key needed)
+  final deviceTTS = DeviceTTSService();
+  await deviceTTS.init();
   
   // Initialize cameras
   cameras = await availableCameras();

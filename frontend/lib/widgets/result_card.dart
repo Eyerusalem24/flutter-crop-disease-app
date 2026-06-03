@@ -1,6 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:share_plus/share_plus.dart';
+import '../services/device_tts_service.dart';
+import '../services/translation_service.dart';
 
 class ResultCard extends StatelessWidget {
   final String disease;
@@ -40,10 +42,26 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
     Share.share(shareText);
   }
 
+  Future<void> _speakResult(BuildContext context) async {
+    final isAmharic = TranslationService.isAmharic;
+    final tts = DeviceTTSService();
+    await tts.init();
+    
+    await tts.speakResult(
+      {
+        'disease': disease,
+        'confidence': confidence.toStringAsFixed(1),
+        'treatment': treatment,
+      },
+      isAmharic ? 'am' : 'en',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final hasImage = imagePath.isNotEmpty;
     final hasGeminiAdvice = geminiAdvice != null && geminiAdvice!.isNotEmpty;
+    final isAmharic = TranslationService.isAmharic;
 
     return Container(
       width: double.infinity,
@@ -62,7 +80,7 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header with Share Button
+          // Header with Share and Speaker Buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -74,10 +92,21 @@ ${geminiAdvice != null && geminiAdvice!.isNotEmpty ? '🤖 AI Expert Advice:\n$g
                   color: Colors.green,
                 ),
               ),
-              IconButton(
-                onPressed: () => _shareResult(context),
-                icon: const Icon(Icons.share, color: Colors.green),
-                tooltip: 'Share Result',
+              Row(
+                children: [
+                  // Speaker button for voice output
+                  IconButton(
+                    onPressed: () => _speakResult(context),
+                    icon: const Icon(Icons.volume_up, color: Colors.blue),
+                    tooltip: isAmharic ? 'ውጤቱን ያንብቡ' : 'Read Result Aloud',
+                  ),
+                  // Share button
+                  IconButton(
+                    onPressed: () => _shareResult(context),
+                    icon: const Icon(Icons.share, color: Colors.green),
+                    tooltip: 'Share Result',
+                  ),
+                ],
               ),
             ],
           ),
