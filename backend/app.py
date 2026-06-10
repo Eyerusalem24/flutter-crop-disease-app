@@ -1,8 +1,9 @@
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
 from config import Config
-from routes import predict_routes, history_routes, crop_routes, language_routes
+from routes import predict_routes, history_routes, crop_routes, language_routes, disease_routes
 from services.gemini_service import GeminiService
+from datetime import datetime
 
 def create_app():
     app = Flask(__name__)
@@ -20,6 +21,7 @@ def create_app():
     app.register_blueprint(history_routes.bp)
     app.register_blueprint(crop_routes.bp)
     app.register_blueprint(language_routes.bp)
+    app.register_blueprint(disease_routes.bp)
     
     # Root route
     @app.route('/', methods=['GET'])
@@ -71,8 +73,6 @@ def create_app():
     return app
 
 if __name__ == '__main__':
-    from datetime import datetime
-    
     app = create_app()
     
     print("\n" + "=" * 60)

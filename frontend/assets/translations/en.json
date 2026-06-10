@@ -48,5 +48,22 @@
   "export_failed": "Export failed",
   "model_comparison": "Model Comparison",
   "disease_calendar": "Disease Calendar",
-  "crop_rotation": "Crop Rotation Planner"
+  "crop_rotation": "Crop Rotation Planner",
+  "rotation_plan": "3-Year Rotation Plan",
+  "year": "Year",
+  "field1": "Field 1",
+  "field2": "Field 2",
+  "field3": "Field 3",
+  "recent_diseases": "Recently Detected Diseases",
+  "tips": "Tips",
+  "rotation_tips": "• Rotating crops yearly maintains soil nutrient balance\n• Legumes (beans, peas) add nitrogen to soil\n• Rotation breaks disease cycles naturally\n• Test soil before planting for best results",
+  "total": "Total",
+  "avg_confidence": "Avg Confidence",
+  "most_common_disease": "Most Common Disease",
+  "detections": "detections",
+  "disease_distribution": "Disease Distribution",
+  "crop_distribution": "Crop Distribution",
+  "disease_trends": "Disease Trends",
+  "no_data_yet": "No data yet",
+  "make_detections_to_see_analytics": "Make some detections to see analytics"
 }

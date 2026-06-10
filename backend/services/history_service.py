@@ -13,7 +13,7 @@ class HistoryService:
         return []
     
     @staticmethod
-    def save_to_history(crop, image_filename, disease, confidence, treatment):
+    def save_to_history(crop, image_filename, disease_name, confidence, treatment):
         history = HistoryService.load_history()
         
         history.append({
@@ -21,7 +21,7 @@ class HistoryService:
             'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             'crop': crop,
             'image': image_filename,
-            'disease': disease,
+            'disease': disease_name,
             'confidence': round(confidence, 2),
             'treatment': treatment
         })
