@@ -1,1 +1,3 @@
 venv311/
+*.pth
+temp_convert/
