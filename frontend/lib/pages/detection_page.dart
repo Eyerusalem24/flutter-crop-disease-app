@@ -1,8 +1,8 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_tts/flutter_tts.dart';
-import 'dart:io';
 
 import '../widgets/result_card.dart';
 import '../widgets/language_selector.dart';
@@ -307,34 +307,18 @@ class _DetectionPageState extends State<DetectionPage>
         'gemini_advice': '',
         'heatmap_url': '',
       };
-      bool usedOffline = false;
+      bool usedOnline = false;
       
-      if (_offlineReady) {
-        try {
-          final offlineResult = await _offlineDetector.predict(imagePath);
-          result = {
-            'disease': offlineResult['disease'],
-            'confidence': double.parse(offlineResult['confidence']),
-            'treatment': _getTreatmentForDisease(offlineResult['disease']),
-            'gemini_advice': '',
-            'heatmap_url': '',
-          };
-          usedOffline = true;
-          debugPrint('✅ Offline detection successful');
-        } catch (e) {
-          debugPrint('⚠️ Offline detection failed: $e, falling back to API');
-          usedOffline = false;
-        }
-      }
-      
-      if (!usedOffline) {
+      // Try ONLINE first (for full features)
+      try {
+        debugPrint('🌐 Trying ONLINE mode...');
         final apiResult = await _apiService.predict(
           imagePath: imagePath,
           crop: _selectedCrop,
           language: isAmharic ? 'am' : 'en',
         ).timeout(
-          const Duration(seconds: 30),
-          onTimeout: () => throw Exception("API timeout after 30 seconds"),
+          const Duration(seconds: 10),
+          onTimeout: () => throw Exception("API timeout"),
         );
         
         result = {
@@ -344,6 +328,38 @@ class _DetectionPageState extends State<DetectionPage>
           'gemini_advice': apiResult['gemini_advice'] ?? '',
           'heatmap_url': apiResult['heatmap_url'] ?? '',
         };
+        usedOnline = true;
+        debugPrint('✅ ONLINE detection successful');
+      } catch (apiError) {
+        debugPrint('⚠️ ONLINE failed: $apiError');
+        debugPrint('📱 Falling back to OFFLINE mode...');
+        
+        // Fallback to OFFLINE
+        if (_offlineReady) {
+          try {
+            final offlineResult = await _offlineDetector.predict(imagePath);
+            if (offlineResult != null) {
+              result = {
+                'disease': offlineResult['disease'],
+                'confidence': double.parse(offlineResult['confidence']),
+                'treatment': _getTreatmentForDisease(offlineResult['disease']),
+                'gemini_advice': '',
+                'heatmap_url': '',
+              };
+              usedOnline = false;
+              debugPrint('✅ OFFLINE detection successful');
+            } else {
+              debugPrint('❌ OFFLINE returned null');
+            }
+          } catch (offlineError) {
+            debugPrint('❌ OFFLINE also failed: $offlineError');
+          }
+        }
+        
+        // If both failed, throw error
+        if (result['disease'] == 'Unknown') {
+          throw Exception('Both online and offline detection failed');
+        }
       }
 
       final diseaseEn = result['disease'];
@@ -353,7 +369,7 @@ class _DetectionPageState extends State<DetectionPage>
       final heatmapUrl = result['heatmap_url'] ?? '';
 
       debugPrint('🔍 Detection Result - Disease: $diseaseEn, Confidence: $confidence');
-      debugPrint('🔍 Heatmap URL received: $heatmapUrl');
+      debugPrint('🔍 Mode: ${usedOnline ? "ONLINE" : "OFFLINE"}');
 
       if (!mounted) return;
 
@@ -377,12 +393,12 @@ class _DetectionPageState extends State<DetectionPage>
 
       _speak(isAmharic ? 'በሽታ ተገኝቷል' : 'Disease detected');
       
-      if (usedOffline && mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('📱 Offline mode - Detection complete'),
-            duration: Duration(seconds: 2),
-            backgroundColor: Colors.green,
+          SnackBar(
+            content: Text(usedOnline ? '🌐 Online mode' : '📱 Offline mode'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: usedOnline ? Colors.green : Colors.orange,
           ),
         );
       }
@@ -417,31 +433,18 @@ class _DetectionPageState extends State<DetectionPage>
         'gemini_advice': '',
         'heatmap_url': '',
       };
-      bool usedOffline = false;
+      bool usedOnline = false;
       
-      if (_offlineReady) {
-        try {
-          final offlineResult = await _offlineDetector.predict(picked.path);
-          result = {
-            'disease': offlineResult['disease'],
-            'confidence': double.parse(offlineResult['confidence']),
-            'treatment': _getTreatmentForDisease(offlineResult['disease']),
-            'gemini_advice': '',
-            'heatmap_url': '',
-          };
-          usedOffline = true;
-          debugPrint('✅ Offline detection successful');
-        } catch (e) {
-          debugPrint('⚠️ Offline detection failed: $e, falling back to API');
-          usedOffline = false;
-        }
-      }
-      
-      if (!usedOffline) {
+      // Try ONLINE first
+      try {
+        debugPrint('🌐 Trying ONLINE mode...');
         final apiResult = await _apiService.predict(
           imagePath: picked.path,
           crop: _selectedCrop,
           language: isAmharic ? 'am' : 'en',
+        ).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () => throw Exception("API timeout"),
         );
         
         result = {
@@ -451,6 +454,30 @@ class _DetectionPageState extends State<DetectionPage>
           'gemini_advice': apiResult['gemini_advice'] ?? '',
           'heatmap_url': apiResult['heatmap_url'] ?? '',
         };
+        usedOnline = true;
+        debugPrint('✅ ONLINE detection successful');
+      } catch (apiError) {
+        debugPrint('⚠️ ONLINE failed: $apiError');
+        debugPrint('📱 Falling back to OFFLINE mode...');
+        
+        if (_offlineReady) {
+          try {
+            final offlineResult = await _offlineDetector.predict(picked.path);
+            if (offlineResult != null) {
+              result = {
+                'disease': offlineResult['disease'],
+                'confidence': double.parse(offlineResult['confidence']),
+                'treatment': _getTreatmentForDisease(offlineResult['disease']),
+                'gemini_advice': '',
+                'heatmap_url': '',
+              };
+              usedOnline = false;
+              debugPrint('✅ OFFLINE detection successful');
+            }
+          } catch (offlineError) {
+            debugPrint('❌ OFFLINE also failed: $offlineError');
+          }
+        }
       }
 
       final diseaseEn = result['disease'];
@@ -459,7 +486,8 @@ class _DetectionPageState extends State<DetectionPage>
       final geminiAdvice = result['gemini_advice'] ?? '';
       final heatmapUrl = result['heatmap_url'] ?? '';
 
-      debugPrint('🔍 Heatmap URL received: $heatmapUrl');
+      debugPrint('🔍 Detection Result - Disease: $diseaseEn, Confidence: $confidence');
+      debugPrint('🔍 Mode: ${usedOnline ? "ONLINE" : "OFFLINE"}');
 
       if (!mounted) return;
 
@@ -482,6 +510,16 @@ class _DetectionPageState extends State<DetectionPage>
       });
 
       _speak(isAmharic ? 'በሽታ ተገኝቷል' : 'Disease detected');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(usedOnline ? '🌐 Online mode' : '📱 Offline mode'),
+            duration: const Duration(seconds: 2),
+            backgroundColor: usedOnline ? Colors.green : Colors.orange,
+          ),
+        );
+      }
       
     } catch (e) {
       debugPrint("❌ Gallery error: $e");

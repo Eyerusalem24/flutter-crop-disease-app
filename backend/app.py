@@ -81,12 +81,7 @@ if __name__ == '__main__':
     print(f"✅ Supported crops: {', '.join(Config.SUPPORTED_CROPS)}")
     print(f"📍 Server: http://localhost:5000")
     print("=" * 60)
-    print("\n⚠️ DEMO MODE - Waiting for trained models")
-    print("Place model files inside models/ folder:")
-    for crop in Config.SUPPORTED_CROPS:
-        print(f" - models/{crop}_model.h5")
-    print("=" * 60 + "\n")
-    
+
     app.run(
         host='0.0.0.0',
         port=5000,

@@ -133,11 +133,19 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
   }
 
   Widget _buildSummaryCards() {
+    // Get total with proper formatting
+    final total = _summaryStats['total'] ?? 0;
+    
+    // Get avg confidence and clamp between 0-100 with 1 decimal
+    double avgConfidence = (_summaryStats['avgConfidence'] ?? 0).toDouble();
+    avgConfidence = avgConfidence.clamp(0, 100);
+    String avgConfidenceStr = avgConfidence.toStringAsFixed(1);
+    
     return Row(
       children: [
-        Expanded(child: _buildStatCard(icon: Icons.analytics, title: _t('total'), value: '${_summaryStats['total']}', color: Colors.blue)),
+        Expanded(child: _buildStatCard(icon: Icons.analytics, title: _t('total'), value: total.toString(), color: Colors.blue)),
         const SizedBox(width: 12),
-        Expanded(child: _buildStatCard(icon: Icons.percent, title: _t('avg_confidence'), value: '${_summaryStats['avgConfidence']}%', color: Colors.green)),
+        Expanded(child: _buildStatCard(icon: Icons.percent, title: _t('avg_confidence'), value: '$avgConfidenceStr%', color: Colors.green)),
       ],
     );
   }

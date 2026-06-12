@@ -1,45 +1,71 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime
 import os
+import torch
+import torch.nn as nn
+from torchvision import models, transforms
+from PIL import Image
+import json
 from config import Config
-from models.model_loader import ModelLoader
-from models.disease_data import TREATMENTS
-from services.image_service import ImageService
 from services.gemini_service import GeminiService
-from services.history_service import HistoryService
-from utils.validators import allowed_file
-from services.gradcam_service import GradCAMService
+from services.image_service import ImageService
 
 bp = Blueprint('predict', __name__)
-model_loader = ModelLoader()
-image_service = ImageService()
 gemini_service = GeminiService()
-history_service = HistoryService()
+image_service = ImageService()
+
+# Load model once at startup
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+print(f"Loading model on {device}...")
+
+# Load class names (5 classes for maize)
+class_names = ['Blight', 'Common_Rust', 'Gray_Leaf_Spot', 'Healthy', 'Not_Maize_Leaf']
+print(f"Classes: {class_names}")
+
+# Load the model
+model_path = 'models/efficientnet_maize_best.pth'
+if not os.path.exists(model_path):
+    model_path = 'models/efficientnet_maize_clean.pth'
+if not os.path.exists(model_path):
+    model_path = 'models/efficientnet_maize.pth'
+
+print(f"Loading model from: {model_path}")
+
+model = models.efficientnet_b0(weights=None)
+in_features = model.classifier[1].in_features
+model.classifier[1] = nn.Linear(in_features, len(class_names))
+model.load_state_dict(torch.load(model_path, map_location='cpu'))
+model = model.to(device)
+model.eval()
+print(f"✅ Model loaded with {len(class_names)} classes")
+
+transform = transforms.Compose([
+    transforms.Resize((224, 224)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+])
+
+# Treatment mapping for 5 classes
+TREATMENTS = {
+    'Blight': 'Remove infected leaves. Apply copper-based fungicide.',
+    'Common_Rust': 'Use resistant varieties. Apply fungicide containing mancozeb.',
+    'Gray_Leaf_Spot': 'Apply fungicides containing azoxystrobin. Improve air circulation.',
+    'Healthy': 'Your plant appears healthy. Continue regular care.',
+    'Not_Maize_Leaf': 'This does not appear to be a maize leaf. Please take a photo of a maize leaf.'
+}
 
 @bp.route('/predict', methods=['POST'])
 def predict():
     try:
-        # Get crop type and language
         crop = request.form.get('crop', 'maize').lower()
-        language = request.form.get('language', 'en')  # Add language parameter
+        language = request.form.get('language', 'en')
         
-        if crop not in Config.SUPPORTED_CROPS:
-            return jsonify({
-                'error': f'Unsupported crop. Supported crops: {Config.SUPPORTED_CROPS}'
-            }), 400
-        
-        # Check image
         if 'image' not in request.files:
             return jsonify({'error': 'No image uploaded'}), 400
         
         file = request.files['image']
         
-        if not allowed_file(file.filename):
-            return jsonify({
-                'error': 'Invalid file type. Use PNG, JPG, or JPEG'
-            }), 400
-        
-        # Save image
+        # Save original image
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{crop}_{timestamp}_{file.filename}"
         filepath = os.path.join(Config.UPLOAD_FOLDER, filename)
@@ -48,59 +74,40 @@ def predict():
         # Enhance image
         enhanced_path = image_service.enhance_image(filepath)
         
-        # Load model and predict
-        model = model_loader.load_model_for_crop(crop)
-        processed_img = image_service.preprocess_image(enhanced_path)
-        disease_name, confidence = model_loader.predict(crop, model, processed_img)
+        # Load and preprocess image
+        image = Image.open(enhanced_path).convert('RGB')
+        input_tensor = transform(image).unsqueeze(0).to(device)
+        
+        # Predict
+        with torch.no_grad():
+            output = model(input_tensor)
+            probabilities = torch.nn.functional.softmax(output, dim=1)
+            confidence, predicted = torch.max(probabilities, 1)
+        
+        disease_name = class_names[predicted.item()]
+        confidence_score = float(confidence.item()) * 100
         
         # Get treatment
-        treatment = TREATMENTS.get(crop, {}).get(
-            disease_name,
-            "Consult local agricultural expert"
-        )
+        treatment = TREATMENTS.get(disease_name, "Consult local agricultural expert")
         
-        # Get Gemini advice with language parameter
-        gemini_advice = gemini_service.get_advice(crop, disease_name, confidence, treatment, language)
+        # Get Gemini advice
+        gemini_advice = gemini_service.get_advice(crop, disease_name, confidence_score, treatment, language)
         
-        # Generate Grad-CAM heatmap
-        heatmap_url = None
-        if model is not None:
-            try:
-                # Get class index (map disease name to index)
-                disease_classes = ['Gray Leaf Spot', 'Common Rust', 'Northern Leaf Blight', 'Healthy']
-                if disease_name in disease_classes:
-                    class_idx = disease_classes.index(disease_name)
-                    
-                    # Create GradCAM service and generate heatmap
-                    gradcam = GradCAMService(model)
-                    heatmap = gradcam.get_heatmap(processed_img, class_idx)
-                    
-                    if heatmap is not None:
-                        heatmap_filename = f"{crop}_{timestamp}_heatmap.jpg"
-                        heatmap_path = os.path.join(Config.UPLOAD_FOLDER, heatmap_filename)
-                        gradcam.save_heatmap(enhanced_path, heatmap, heatmap_path)
-                        heatmap_url = f"/static/uploads/{heatmap_filename}"
-                        print(f"✅ Heatmap generated: {heatmap_url}")
-            except Exception as e:
-                print(f"⚠️ Heatmap generation failed: {e}")
-        
-        # Save to history
-        history_service.save_to_history(crop, filename, disease_name, confidence, treatment)
-        
-        # Return result with heatmap
         return jsonify({
             'status': 'success',
             'crop': crop,
             'prediction': {
                 'disease': disease_name,
-                'confidence': confidence,
+                'confidence': confidence_score,
                 'treatment': treatment,
                 'gemini_advice': gemini_advice,
-                'enhanced': True,
-                'heatmap_url': heatmap_url
+                'heatmap_url': ''
             },
             'image_url': f"/static/uploads/{os.path.basename(enhanced_path)}"
         })
         
     except Exception as e:
+        print(f"❌ Prediction error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({'error': str(e)}), 500
