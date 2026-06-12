@@ -1,2 +1,4 @@
 .env
 *.tflite
+*.backup
+detection_service.dart
