@@ -15,6 +15,9 @@ class _CropRotationPlannerState extends State<CropRotationPlanner> {
   List<Map<String, dynamic>> _detectedDiseases = [];
   bool _isLoading = true;
 
+  String _t(String key) => TranslationService.translate(key);
+  bool get _isAmharic => TranslationService.currentLanguage == 'am';
+
   @override
   void initState() {
     super.initState();
@@ -26,31 +29,20 @@ class _CropRotationPlannerState extends State<CropRotationPlanner> {
     try {
       final predictions = await _historyService.getPredictions(limit: 50);
       final diseaseCount = <String, int>{};
-
       for (var pred in predictions) {
         final disease = pred['disease']?.toString() ?? '';
         if (disease.isNotEmpty && disease != 'Healthy') {
           diseaseCount[disease] = (diseaseCount[disease] ?? 0) + 1;
         }
       }
-
-      final sorted = diseaseCount.entries.toList()
-        ..sort((a, b) => b.value.compareTo(a.value));
-
-      _detectedDiseases = sorted.map((e) => ({
-        'name': e.key,
-        'count': e.value,
-      })).toList();
-    } catch (e) {
-      print('Error loading diseases: $e');
-    }
+      final sorted = diseaseCount.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
+      _detectedDiseases = sorted.map((e) => ({'name': e.key, 'count': e.value})).toList();
+    } catch (e) { print('Error loading diseases: $e'); }
     if (mounted) setState(() => _isLoading = false);
   }
 
-  // Helper to get crop names in Amharic
-  String _getCropName(String cropName, bool isAmharic) {
-    if (!isAmharic) return cropName;
-    
+  String _getCropName(String cropName) {
+    if (!_isAmharic) return cropName;
     switch (cropName.toLowerCase()) {
       case 'maize': return 'በቆሎ';
       case 'beans': return 'ባቄላ';
@@ -61,13 +53,12 @@ class _CropRotationPlannerState extends State<CropRotationPlanner> {
 
   @override
   Widget build(BuildContext context) {
-    final isAmharic = TranslationService.isAmharic;
     final currentYear = DateTime.now().year;
     final screenWidth = MediaQuery.of(context).size.width;
-
+    
     return Scaffold(
       appBar: AppBar(
-        title: Text(isAmharic ? 'የሰብል መዞር እቅድ' : 'Crop Rotation Planner'),
+        title: Text(_t('crop_rotation')),
         backgroundColor: Colors.green,
         actions: const [LanguageSelector()],
       ),
@@ -76,9 +67,7 @@ class _CropRotationPlannerState extends State<CropRotationPlanner> {
           : SingleChildScrollView(
               padding: const EdgeInsets.all(16),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Rotation Plan Card
                   Card(
                     elevation: 4,
                     margin: const EdgeInsets.only(bottom: 16),
@@ -91,10 +80,7 @@ class _CropRotationPlannerState extends State<CropRotationPlanner> {
                             children: [
                               Icon(Icons.calendar_today, color: Colors.green[700]),
                               const SizedBox(width: 8),
-                              Text(
-                                isAmharic ? 'የሰብል መዞር እቅድ' : '3-Year Rotation Plan',
-                                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                              ),
+                              Text(_t('rotation_plan'), style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                             ],
                           ),
                           const SizedBox(height: 16),
@@ -106,29 +92,29 @@ class _CropRotationPlannerState extends State<CropRotationPlanner> {
                                 columnSpacing: 20,
                                 headingRowColor: WidgetStateProperty.all(Colors.green.shade100),
                                 columns: [
-                                  DataColumn(label: Text(isAmharic ? 'ዓመት' : 'Year', style: const TextStyle(fontWeight: FontWeight.bold))),
-                                  DataColumn(label: Text(isAmharic ? 'ሜዳ 1' : 'Field 1', style: const TextStyle(fontWeight: FontWeight.bold))),
-                                  DataColumn(label: Text(isAmharic ? 'ሜዳ 2' : 'Field 2', style: const TextStyle(fontWeight: FontWeight.bold))),
-                                  DataColumn(label: Text(isAmharic ? 'ሜዳ 3' : 'Field 3', style: const TextStyle(fontWeight: FontWeight.bold))),
+                                  DataColumn(label: Text(_t('year'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                                  DataColumn(label: Text(_t('field1'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                                  DataColumn(label: Text(_t('field2'), style: const TextStyle(fontWeight: FontWeight.bold))),
+                                  DataColumn(label: Text(_t('field3'), style: const TextStyle(fontWeight: FontWeight.bold))),
                                 ],
                                 rows: [
                                   DataRow(cells: [
                                     DataCell(Text(currentYear.toString())),
-                                    DataCell(Text(_getCropName('Maize', isAmharic))),
-                                    DataCell(Text(_getCropName('Beans', isAmharic))),
-                                    DataCell(Text(_getCropName('Wheat', isAmharic))),
+                                    DataCell(Text(_getCropName('Maize'))),
+                                    DataCell(Text(_getCropName('Beans'))),
+                                    DataCell(Text(_getCropName('Wheat'))),
                                   ]),
                                   DataRow(cells: [
                                     DataCell(Text((currentYear + 1).toString())),
-                                    DataCell(Text(_getCropName('Beans', isAmharic))),
-                                    DataCell(Text(_getCropName('Wheat', isAmharic))),
-                                    DataCell(Text(_getCropName('Maize', isAmharic))),
+                                    DataCell(Text(_getCropName('Beans'))),
+                                    DataCell(Text(_getCropName('Wheat'))),
+                                    DataCell(Text(_getCropName('Maize'))),
                                   ]),
                                   DataRow(cells: [
                                     DataCell(Text((currentYear + 2).toString())),
-                                    DataCell(Text(_getCropName('Wheat', isAmharic))),
-                                    DataCell(Text(_getCropName('Maize', isAmharic))),
-                                    DataCell(Text(_getCropName('Beans', isAmharic))),
+                                    DataCell(Text(_getCropName('Wheat'))),
+                                    DataCell(Text(_getCropName('Maize'))),
+                                    DataCell(Text(_getCropName('Beans'))),
                                   ]),
                                 ],
                               ),
@@ -138,8 +124,6 @@ class _CropRotationPlannerState extends State<CropRotationPlanner> {
                       ),
                     ),
                   ),
-
-                  // Detected Diseases (if any)
                   if (_detectedDiseases.isNotEmpty)
                     Card(
                       color: Colors.red.shade50,
@@ -153,10 +137,7 @@ class _CropRotationPlannerState extends State<CropRotationPlanner> {
                               children: [
                                 Icon(Icons.warning, color: Colors.red[700]),
                                 const SizedBox(width: 8),
-                                Text(
-                                  isAmharic ? 'ከቅርብ ጊዜ ጀምሮ የተገኙ በሽታዎች' : 'Recently Detected Diseases',
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                                ),
+                                Text(_t('recent_diseases'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                               ],
                             ),
                             const SizedBox(height: 12),
@@ -173,8 +154,6 @@ class _CropRotationPlannerState extends State<CropRotationPlanner> {
                         ),
                       ),
                     ),
-
-                  // Tips Card
                   Card(
                     color: Colors.blue.shade50,
                     margin: const EdgeInsets.only(bottom: 16),
@@ -187,25 +166,11 @@ class _CropRotationPlannerState extends State<CropRotationPlanner> {
                             children: [
                               Icon(Icons.lightbulb, color: Colors.orange[700]),
                               const SizedBox(width: 8),
-                              Text(
-                                isAmharic ? 'ምክሮች' : 'Tips',
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                              ),
+                              Text(_t('tips'), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                             ],
                           ),
                           const SizedBox(height: 12),
-                          Text(
-                            isAmharic
-                                ? '• ሰብሎችን በየዓመቱ ማሽከርከር የአፈር ንጥረ ነገር ሚዛን ይጠብቃል\n'
-                                  '• ጥራጥሬዎች (ባቄላ፣ ሙንጤ) ናይትሮጅን ወደ አፈር ይጨምራሉ\n'
-                                  '• ማሽከርከር የበሽታ ዑደትን ይሰብራል\n'
-                                  '• ከመትከልዎ በፊት የአፈር ምርመራ ያድርጉ'
-                                : '• Rotating crops yearly maintains soil nutrient balance\n'
-                                  '• Legumes (beans, peas) add nitrogen to soil\n'
-                                  '• Rotation breaks disease cycles naturally\n'
-                                  '• Test soil before planting for best results',
-                            style: const TextStyle(height: 1.5),
-                          ),
+                          Text(_t('rotation_tips'), style: const TextStyle(height: 1.5)),
                         ],
                       ),
                     ),

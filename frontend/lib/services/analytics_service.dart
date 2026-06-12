@@ -1,30 +1,38 @@
 import 'package:sqflite/sqflite.dart';
 import 'history_service.dart';
+import 'disease_service.dart';
 
 class AnalyticsService {
   final HistoryService _historyService = HistoryService();
-
-  // Get all predictions for analysis
-  Future<List<Map<String, dynamic>>> getAllPredictions() async {
-    return await _historyService.getPredictions(limit: 1000);
-  }
-
-  // Get disease frequency (for pie/bar chart)
+  final DiseaseService _diseaseService = DiseaseService();
+  
   Future<Map<String, int>> getDiseaseFrequency() async {
-    final predictions = await getAllPredictions();
+    await _diseaseService.loadDiseases();
+    
+    final predictions = await _historyService.getPredictions(limit: 1000);
     final Map<String, int> frequency = {};
     
     for (var p in predictions) {
-      String disease = p['disease'] ?? 'Unknown';
-      frequency[disease] = (frequency[disease] ?? 0) + 1;
+      String diseaseName;
+      
+      // If we have disease_id, use it to get canonical name
+      if (p.containsKey('disease_id') && p['disease_id'] != null) {
+        final diseaseId = p['disease_id'] as int;
+        diseaseName = _diseaseService.getDiseaseName(diseaseId);
+      } else {
+        // Fallback for old data
+        diseaseName = p['disease'] ?? 'Unknown';
+      }
+      
+      frequency[diseaseName] = (frequency[diseaseName] ?? 0) + 1;
     }
     
     return frequency;
   }
-
-  // Get crop distribution
+  
+  // Rest of the methods remain the same
   Future<Map<String, int>> getCropDistribution() async {
-    final predictions = await getAllPredictions();
+    final predictions = await _historyService.getPredictions(limit: 1000);
     final Map<String, int> distribution = {};
     
     for (var p in predictions) {
@@ -34,10 +42,11 @@ class AnalyticsService {
     
     return distribution;
   }
-
-  // Get disease trends over time (last 7 days)
+  
   Future<Map<String, Map<String, int>>> getDiseaseTrends() async {
-    final predictions = await getAllPredictions();
+    await _diseaseService.loadDiseases();
+    
+    final predictions = await _historyService.getPredictions(limit: 1000);
     final Map<String, Map<String, int>> trends = {};
     
     final now = DateTime.now();
@@ -53,20 +62,27 @@ class AnalyticsService {
     
     for (var p in predictions) {
       String timestamp = p['timestamp'] ?? '';
-      String disease = p['disease'] ?? 'Unknown';
+      String diseaseKey;
+      
+      if (p.containsKey('disease_id') && p['disease_id'] != null) {
+        final diseaseId = p['disease_id'] as int;
+        diseaseKey = _diseaseService.getDiseaseName(diseaseId);
+      } else {
+        diseaseKey = p['disease'] ?? 'Unknown';
+      }
+      
       String dateKey = _getDateKeyFromTimestamp(timestamp);
       
       if (trends.containsKey(dateKey)) {
-        trends[dateKey]![disease] = (trends[dateKey]![disease] ?? 0) + 1;
+        trends[dateKey]![diseaseKey] = (trends[dateKey]![diseaseKey] ?? 0) + 1;
       }
     }
     
     return trends;
   }
-
-  // Get summary statistics
+  
   Future<Map<String, dynamic>> getSummaryStats() async {
-    final predictions = await getAllPredictions();
+    final predictions = await _historyService.getPredictions(limit: 1000);
     
     int total = predictions.length;
     double avgConfidence = 0;
@@ -92,43 +108,19 @@ class AnalyticsService {
       'avgConfidence': avgConfidence.toStringAsFixed(1),
       'healthyCount': healthyCount,
       'diseasedCount': diseasedCount,
-      'mostRecent': total > 0 ? predictions.first : null,
     };
   }
-
-  // Get most common disease
+  
   Future<MapEntry<String, int>?> getMostCommonDisease() async {
     final frequency = await getDiseaseFrequency();
     if (frequency.isEmpty) return null;
     return frequency.entries.reduce((a, b) => a.value > b.value ? a : b);
   }
-
-  // Generate mock data for testing
-  Future<void> generateMockData() async {
-    final List<String> mockDiseases = [
-      'Common Rust', 'Gray Leaf Spot', 'Northern Leaf Blight', 'Healthy',
-      'Late Blight', 'Early Blight', 'Leaf Mold', 'Stripe Rust', 'Blast'
-    ];
-    final List<String> mockCrops = ['maize', 'tomato', 'potato', 'wheat', 'rice'];
-    
-    for (int i = 0; i < 20; i++) {
-      await _historyService.savePrediction({
-        'crop': mockCrops[i % mockCrops.length],
-        'disease': mockDiseases[i % mockDiseases.length],
-        'confidence': 70 + (i * 1.5),
-        'treatment': 'Mock treatment for testing',
-        'imagePath': '',
-        'timestamp': DateTime.now().subtract(Duration(days: i % 7)).toIso8601String(),
-      });
-    }
-  }
-
-  // Helper: Format date as "MM/DD"
+  
   String _formatDateKey(DateTime date) {
     return '${date.month}/${date.day}';
   }
-
-  // Helper: Extract date from timestamp
+  
   String _getDateKeyFromTimestamp(String timestamp) {
     try {
       final date = DateTime.parse(timestamp);

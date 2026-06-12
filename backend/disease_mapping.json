@@ -1,0 +1,18 @@
+{
+  "diseases": [
+    {"id": 1, "name_en": "Gray Leaf Spot", "name_am": "ግራጫ ቅጠል ነጠብጣብ"},
+    {"id": 2, "name_en": "Common Rust", "name_am": "ዝገት"},
+    {"id": 3, "name_en": "Northern Leaf Blight", "name_am": "ሰሜናዊ ቅጠል በሽታ"},
+    {"id": 4, "name_en": "Healthy", "name_am": "ጤናማ"},
+    {"id": 5, "name_en": "Late Blight", "name_am": "ዘግይቶ የሚከሰት በሽታ"},
+    {"id": 6, "name_en": "Early Blight", "name_am": "ቀደምት በሽታ"},
+    {"id": 7, "name_en": "Leaf Mold", "name_am": "ቅጠል ሻጋታ"},
+    {"id": 8, "name_en": "Septoria Leaf Spot", "name_am": "ሴፕቶሪያ ቅጠል ነጠብጣብ"},
+    {"id": 9, "name_en": "Stripe Rust", "name_am": "መስመራዊ ዝገት"},
+    {"id": 10, "name_en": "Leaf Rust", "name_am": "ቅጠል ዝገት"},
+    {"id": 11, "name_en": "Stem Rust", "name_am": "ግንድ ዝገት"},
+    {"id": 12, "name_en": "Blast", "name_am": "ፍንዳታ"},
+    {"id": 13, "name_en": "Blight", "name_am": "በሽታ"},
+    {"id": 14, "name_en": "Sheath Rot", "name_am": "ሽፋን መበስበስ"}
+  ]
+}

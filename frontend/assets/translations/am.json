@@ -48,5 +48,22 @@
   "export_failed": "ማውጣት አልተሳካም",
   "model_comparison": "የሞዴል ንጽጽር",
   "disease_calendar": "የበሽታ ቀን መቁጠሪያ",
-  "crop_rotation": "የሰብል መዞር እቅድ"
+  "crop_rotation": "የሰብል መዞር እቅድ",
+  "rotation_plan": "የሰብል መዞር እቅድ (3 ዓመት)",
+  "year": "ዓመት",
+  "field1": "ሜዳ 1",
+  "field2": "ሜዳ 2",
+  "field3": "ሜዳ 3",
+  "recent_diseases": "ከቅርብ ጊዜ ጀምሮ የተገኙ በሽታዎች",
+  "tips": "ምክሮች",
+  "rotation_tips": "• ሰብሎችን በየዓመቱ ማሽከርከር የአፈር ንጥረ ነገር ሚዛን ይጠብቃል\n• ጥራጥሬዎች (ባቄላ፣ ሙንጤ) ናይትሮጅን ወደ አፈር ይጨምራሉ\n• ማሽከርከር የበሽታ ዑደትን ይሰብራል\n• ከመትከልዎ በፊት የአፈር ምርመራ ያድርጉ",
+  "total": "ጠቅላላ",
+  "avg_confidence": "አማካይ እምነት",
+  "most_common_disease": "በጣም የተለመደ በሽታ",
+  "detections": "ጊዜ",
+  "disease_distribution": "በሽታዎች ስርጭት",
+  "crop_distribution": "ሰብሎች ስርጭት",
+  "disease_trends": "የበሽታ አዝማሚያ",
+  "no_data_yet": "ምንም መረጃ የለም",
+  "make_detections_to_see_analytics": "ውጤቶችን ለማየት በሽታዎችን ይለዩ"
 }
