@@ -10,9 +10,8 @@ import '../services/api_service.dart';
 import '../services/camera_service.dart';
 import '../services/history_service.dart';
 import '../services/permission_service.dart';
-import '../services/analytics_service.dart';
 import '../services/translation_service.dart';
-import 'package:share_plus/share_plus.dart';
+import '../services/offline_detector.dart';
 
 class DetectionPage extends StatefulWidget {
   final CameraDescription camera;
@@ -33,9 +32,11 @@ class _DetectionPageState extends State<DetectionPage>
   final ApiService _apiService = ApiService();
   final HistoryService _historyService = HistoryService();
   final FlutterTts _flutterTts = FlutterTts();
+  final OfflineDetector _offlineDetector = OfflineDetector();
 
   bool _processing = false;
   bool _cameraReady = false;
+  bool _offlineReady = false;
 
   final List<String> _crops = [
     'maize',
@@ -56,7 +57,6 @@ class _DetectionPageState extends State<DetectionPage>
 
   String? _errorMessage;
 
-  // Amharic translations for diseases
   final Map<String, String> _diseaseAm = {
     'Gray Leaf Spot': 'ግራጫ ቅጠል ነጠብጣብ',
     'Common Rust': 'ዝገት',
@@ -74,7 +74,6 @@ class _DetectionPageState extends State<DetectionPage>
     'Sheath Rot': 'ሽፋን መበስበስ',
   };
 
-  // Amharic translations for treatments
   final Map<String, String> _treatmentAm = {
     'Gray Leaf Spot': 'ፈንገስ ተከላካይ መድሀኒት ይጠቀሙ።',
     'Common Rust': 'ተከላካይ ዝርያዎችን ይጠቀሙ።',
@@ -92,7 +91,6 @@ class _DetectionPageState extends State<DetectionPage>
     'Sheath Rot': 'ፈንገስ ተከላካይ ይጠቀሙ።',
   };
 
-  // Amharic translations for crop names
   final Map<String, String> _cropAm = {
     'maize': 'በቆሎ',
     'tomato': 'ቲማቲም',
@@ -100,6 +98,16 @@ class _DetectionPageState extends State<DetectionPage>
     'wheat': 'ስንዴ',
     'rice': 'ሩዝ',
   };
+
+  String _getTreatmentForDisease(String disease) {
+    final treatments = {
+      'Blight': 'Remove infected leaves. Apply copper-based fungicide.',
+      'Common_Rust': 'Use resistant varieties. Apply fungicide containing mancozeb.',
+      'Gray_Leaf_Spot': 'Apply fungicides containing azoxystrobin. Improve air circulation.',
+      'Healthy': 'Your plant appears healthy. Continue regular care.',
+    };
+    return treatments[disease] ?? 'Consult local agricultural expert.';
+  }
 
   Future<void> _generateTestData() async {
     final historyService = HistoryService();
@@ -137,7 +145,7 @@ class _DetectionPageState extends State<DetectionPage>
         return;
       }
     } catch (e) {
-      print("❌ Camera check failed: $e");
+      debugPrint("❌ Camera check failed: $e");
       _showError("Camera error: $e");
     }
   }
@@ -147,6 +155,20 @@ class _DetectionPageState extends State<DetectionPage>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initializeApp();
+    _loadOfflineModel();
+  }
+
+  Future<void> _loadOfflineModel() async {
+    try {
+      await _offlineDetector.loadModel();
+      setState(() {
+        _offlineReady = true;
+      });
+      debugPrint('✅ Offline model ready');
+    } catch (e) {
+      debugPrint('⚠️ Offline model failed to load: $e');
+      _offlineReady = false;
+    }
   }
 
   Future<void> _initializeApp() async {
@@ -187,9 +209,9 @@ class _DetectionPageState extends State<DetectionPage>
         _cameraReady = true;
       });
 
-      print("✅ Camera initialized successfully");
+      debugPrint("✅ Camera initialized successfully");
     } catch (e) {
-      print("❌ Camera initialization error: $e");
+      debugPrint("❌ Camera initialization error: $e");
       if (!mounted) return;
       _showError("Cannot access camera. Please check permissions.");
     }
@@ -278,14 +300,51 @@ class _DetectionPageState extends State<DetectionPage>
 
       final isAmharic = TranslationService.isAmharic;
       
-      final result = await _apiService.predict(
-        imagePath: imagePath,
-        crop: _selectedCrop,
-        language: isAmharic ? 'am' : 'en',
-      ).timeout(
-        const Duration(seconds: 30),
-        onTimeout: () => throw Exception("API timeout after 30 seconds"),
-      );
+      Map<String, dynamic> result = {
+        'disease': 'Unknown',
+        'confidence': 0.0,
+        'treatment': 'No treatment available',
+        'gemini_advice': '',
+        'heatmap_url': '',
+      };
+      bool usedOffline = false;
+      
+      if (_offlineReady) {
+        try {
+          final offlineResult = await _offlineDetector.predict(imagePath);
+          result = {
+            'disease': offlineResult['disease'],
+            'confidence': double.parse(offlineResult['confidence']),
+            'treatment': _getTreatmentForDisease(offlineResult['disease']),
+            'gemini_advice': '',
+            'heatmap_url': '',
+          };
+          usedOffline = true;
+          debugPrint('✅ Offline detection successful');
+        } catch (e) {
+          debugPrint('⚠️ Offline detection failed: $e, falling back to API');
+          usedOffline = false;
+        }
+      }
+      
+      if (!usedOffline) {
+        final apiResult = await _apiService.predict(
+          imagePath: imagePath,
+          crop: _selectedCrop,
+          language: isAmharic ? 'am' : 'en',
+        ).timeout(
+          const Duration(seconds: 30),
+          onTimeout: () => throw Exception("API timeout after 30 seconds"),
+        );
+        
+        result = {
+          'disease': apiResult['disease'],
+          'confidence': apiResult['confidence'],
+          'treatment': apiResult['treatment'],
+          'gemini_advice': apiResult['gemini_advice'] ?? '',
+          'heatmap_url': apiResult['heatmap_url'] ?? '',
+        };
+      }
 
       final diseaseEn = result['disease'];
       final confidence = result['confidence'];
@@ -293,8 +352,8 @@ class _DetectionPageState extends State<DetectionPage>
       final geminiAdvice = result['gemini_advice'] ?? '';
       final heatmapUrl = result['heatmap_url'] ?? '';
 
-      print('🔍 API Result - Disease: $diseaseEn, Confidence: $confidence');
-      print('🔍 Heatmap URL received: $heatmapUrl');
+      debugPrint('🔍 Detection Result - Disease: $diseaseEn, Confidence: $confidence');
+      debugPrint('🔍 Heatmap URL received: $heatmapUrl');
 
       if (!mounted) return;
 
@@ -305,7 +364,6 @@ class _DetectionPageState extends State<DetectionPage>
         _geminiAdvice = geminiAdvice;
         _heatmapUrl = heatmapUrl;
         _processing = false;
-        print('✅ Result set - Disease: $_resultDisease, Confidence: $_resultConfidence');
       });
 
       await _historyService.savePrediction({
@@ -318,8 +376,19 @@ class _DetectionPageState extends State<DetectionPage>
       });
 
       _speak(isAmharic ? 'በሽታ ተገኝቷል' : 'Disease detected');
+      
+      if (usedOffline && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('📱 Offline mode - Detection complete'),
+            duration: Duration(seconds: 2),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+      
     } catch (e) {
-      print("❌ Detection error: $e");
+      debugPrint("❌ Detection error: $e");
       if (!mounted) return;
       setState(() { _processing = false; });
       _showError("Detection failed: $e");
@@ -341,11 +410,48 @@ class _DetectionPageState extends State<DetectionPage>
     try {
       final isAmharic = TranslationService.isAmharic;
       
-      final result = await _apiService.predict(
-        imagePath: picked.path,
-        crop: _selectedCrop,
-        language: isAmharic ? 'am' : 'en',
-      );
+      Map<String, dynamic> result = {
+        'disease': 'Unknown',
+        'confidence': 0.0,
+        'treatment': 'No treatment available',
+        'gemini_advice': '',
+        'heatmap_url': '',
+      };
+      bool usedOffline = false;
+      
+      if (_offlineReady) {
+        try {
+          final offlineResult = await _offlineDetector.predict(picked.path);
+          result = {
+            'disease': offlineResult['disease'],
+            'confidence': double.parse(offlineResult['confidence']),
+            'treatment': _getTreatmentForDisease(offlineResult['disease']),
+            'gemini_advice': '',
+            'heatmap_url': '',
+          };
+          usedOffline = true;
+          debugPrint('✅ Offline detection successful');
+        } catch (e) {
+          debugPrint('⚠️ Offline detection failed: $e, falling back to API');
+          usedOffline = false;
+        }
+      }
+      
+      if (!usedOffline) {
+        final apiResult = await _apiService.predict(
+          imagePath: picked.path,
+          crop: _selectedCrop,
+          language: isAmharic ? 'am' : 'en',
+        );
+        
+        result = {
+          'disease': apiResult['disease'],
+          'confidence': apiResult['confidence'],
+          'treatment': apiResult['treatment'],
+          'gemini_advice': apiResult['gemini_advice'] ?? '',
+          'heatmap_url': apiResult['heatmap_url'] ?? '',
+        };
+      }
 
       final diseaseEn = result['disease'];
       final confidence = result['confidence'];
@@ -353,7 +459,7 @@ class _DetectionPageState extends State<DetectionPage>
       final geminiAdvice = result['gemini_advice'] ?? '';
       final heatmapUrl = result['heatmap_url'] ?? '';
 
-      print('🔍 Heatmap URL received: $heatmapUrl');
+      debugPrint('🔍 Heatmap URL received: $heatmapUrl');
 
       if (!mounted) return;
 
@@ -376,8 +482,9 @@ class _DetectionPageState extends State<DetectionPage>
       });
 
       _speak(isAmharic ? 'በሽታ ተገኝቷል' : 'Disease detected');
+      
     } catch (e) {
-      print("❌ Gallery error: $e");
+      debugPrint("❌ Gallery error: $e");
       _showError("Analysis failed: $e");
     }
   }
@@ -387,6 +494,7 @@ class _DetectionPageState extends State<DetectionPage>
     WidgetsBinding.instance.removeObserver(this);
     _cameraService?.dispose();
     _flutterTts.stop();
+    _offlineDetector.dispose();
     super.dispose();
   }
 
@@ -460,6 +568,23 @@ class _DetectionPageState extends State<DetectionPage>
                                     color: Colors.green[800],
                                   ),
                                 ),
+                                if (_offlineReady)
+                                  Container(
+                                    margin: const EdgeInsets.only(left: 8),
+                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.green.shade100,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      'Offline',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.green[700],
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
                               ],
                             ),
                             const SizedBox(height: 12),

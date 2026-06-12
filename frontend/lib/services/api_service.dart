@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  final String baseUrl = 'http://192.168.1.2:5000';  // IP
+  final String baseUrl = 'http://10.116.80.211:5000';  // IP
 
   Future<Map<String, dynamic>> predict({
     required String imagePath,
