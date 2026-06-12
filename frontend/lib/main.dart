@@ -1,4 +1,3 @@
-import 'pages/model_comparison_page.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'pages/auth_wrapper.dart';

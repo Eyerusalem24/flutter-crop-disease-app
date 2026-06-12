@@ -4,9 +4,7 @@ import 'detection_page.dart';
 import 'history_page.dart';
 import 'analytics_page.dart';
 import 'field_survey_page.dart';
-import 'confusion_matrix_page.dart';
 import 'disease_encyclopedia_page.dart';
-import 'model_comparison_page.dart';
 import 'disease_calendar_page.dart';
 import 'crop_rotation_planner.dart';
 import '../services/translation_service.dart';
@@ -292,30 +290,6 @@ class _HomePageState extends State<HomePage> {
                                   
                                   const SizedBox(height: 10),
 
-                                  // Confusion Matrix Button
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: OutlinedButton.icon(
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(builder: (context) => const ConfusionMatrixPage()),
-                                        );
-                                      },
-                                      icon: const Icon(Icons.grid_on),
-                                      label: Text(TranslationService.translate('model_performance')),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.green,
-                                        side: const BorderSide(color: Colors.green),
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(30),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  
-                                  const SizedBox(height: 10),
 
                                   // Disease Encyclopedia Button
                                   SizedBox(
@@ -342,30 +316,6 @@ class _HomePageState extends State<HomePage> {
                                   
                                   const SizedBox(height: 10),
 
-                                  // Model Comparison Button
-                                  SizedBox(
-                                    width: double.infinity,
-                                    child: OutlinedButton.icon(
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(builder: (context) => const ModelComparisonPage()),
-                                        );
-                                      },
-                                      icon: const Icon(Icons.compare_arrows),
-                                      label: Text(TranslationService.translate('model_comparison')),
-                                      style: OutlinedButton.styleFrom(
-                                        foregroundColor: Colors.green,
-                                        side: const BorderSide(color: Colors.green),
-                                        padding: const EdgeInsets.symmetric(vertical: 12),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(30),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  
-                                  const SizedBox(height: 10),
 
                                   // Disease Calendar Button
                                   SizedBox(

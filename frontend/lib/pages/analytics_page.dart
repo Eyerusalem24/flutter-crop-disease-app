@@ -132,12 +132,20 @@ class _AnalyticsPageState extends State<AnalyticsPage> {
     );
   }
 
-  Widget _buildSummaryCards() {
+   Widget _buildSummaryCards() {
     // Get total with proper formatting
     final total = _summaryStats['total'] ?? 0;
     
-    // Get avg confidence and clamp between 0-100 with 1 decimal
-    double avgConfidence = (_summaryStats['avgConfidence'] ?? 0).toDouble();
+    // Get avg confidence - handle both String and num types
+    dynamic avgConfValue = _summaryStats['avgConfidence'] ?? '0';
+    double avgConfidence;
+    
+    if (avgConfValue is String) {
+      avgConfidence = double.tryParse(avgConfValue) ?? 0.0;
+    } else {
+      avgConfidence = (avgConfValue as num).toDouble();
+    }
+    
     avgConfidence = avgConfidence.clamp(0, 100);
     String avgConfidenceStr = avgConfidence.toStringAsFixed(1);
     
