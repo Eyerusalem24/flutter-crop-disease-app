@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import '../services/translation_service.dart';
 
 class DiseaseService {
-  final String baseUrl = 'http://192.168.1.2:5000'; // Update with your IP
+  final String baseUrl = 'http://10.127.66.211:5000'; // Update with your IP
   
   Map<int, String> _diseaseNames = {};
   bool _isLoaded = false;
